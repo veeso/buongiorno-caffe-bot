@@ -15,25 +15,18 @@ jobs:
         run: |
           docker volume create redis-data
           docker-compose -f "tests/docker-compose.yml" up -d --build
-      - name: Setup nightly toolchain
-        uses: actions-rs/toolchain@v1
+      - name: Set up Go
+        uses: actions/setup-go@v3
         with:
-          toolchain: nightly
-          override: true
-      - name: Run tests (nightly)
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --no-fail-fast
-        env:
-          CARGO_INCREMENTAL: "0"
-          RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
-          RUSTDOCFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
-      - name: Coverage with grcov
-        id: coverage
-        uses: actions-rs/grcov@v0.1
+          go-version: 1.18
+      - name: Build
+        run: go build -v ./...
+      - name: Test
+        run: go test -v -covermode=count -coverprofile=coverage.out ./...
+      - name: Convert coverage to lcov
+        uses: jandelgado/gcov2lcov-action@v1
       - name: Coveralls
         uses: coverallsapp/github-action@v1.1.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: ${{ steps.coverage.outputs.report }}
+          path-to-lcov: coverage.lcov

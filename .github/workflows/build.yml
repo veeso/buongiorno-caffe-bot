@@ -15,17 +15,11 @@ jobs:
         run: |
           docker volume create redis-data
           docker-compose -f "tests/docker-compose.yml" up -d --build
-      - uses: actions-rs/toolchain@v1
+      - name: Set up Go
+        uses: actions/setup-go@v3
         with:
-          toolchain: stable
-          override: true
-          components: rustfmt, clippy
-      - name: Run tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --no-fail-fast
-      - name: Format
-        run: cargo fmt --all -- --check
-      - name: Clippy
-        run: cargo clippy -- -Dwarnings
+          go-version: 1.18
+      - name: Build
+        run: go build -v ./...
+      - name: Test
+        run: go test -v ./...
