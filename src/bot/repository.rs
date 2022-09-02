@@ -27,9 +27,7 @@ impl Repository {
     /// Insert a chat to database
     pub async fn insert_chat(&self, chat: ChatId) -> anyhow::Result<()> {
         if self.is_subscribed(&chat).await? {
-            anyhow::bail!(
-                "Sei già iscritto a katanga. Se vuoi lucrare di più iscriviti ai miei corsi."
-            )
+            anyhow::bail!("Sei già iscritto ai messaggi automatici.")
         }
         Chat::new(chat)
             .insert(self.db.pool())
