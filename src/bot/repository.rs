@@ -138,3 +138,64 @@ impl Repository {
             .any(|(a, b, c)| a == chat_id && b == name && *c == date))
     }
 }
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    use pretty_assertions::assert_eq;
+    use tempfile::NamedTempFile;
+
+    #[tokio::test]
+    async fn should_handle_chats() {
+        let database = NamedTempFile::new().unwrap();
+        std::env::set_var("DATABASE_URL", database.path());
+        let repository = Repository::connect().await.unwrap();
+        assert!(repository.insert_chat(ChatId(1)).await.is_ok());
+        assert!(repository.insert_chat(ChatId(2)).await.is_ok());
+        // duped
+        assert!(repository.insert_chat(ChatId(1)).await.is_err());
+        // get chats
+        assert_eq!(repository.get_subscribed_chats().await.unwrap().len(), 2);
+        // delete
+        assert!(repository.delete_chat(ChatId(2)).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn should_handle_birthdays() {
+        let database = NamedTempFile::new().unwrap();
+        std::env::set_var("DATABASE_URL", database.path());
+        let repository = Repository::connect().await.unwrap();
+        assert!(repository
+            .insert_birthday(
+                ChatId(1),
+                "Christian".to_string(),
+                NaiveDate::from_ymd(1997, 5, 30)
+            )
+            .await
+            .is_ok());
+        assert!(repository
+            .insert_birthday(
+                ChatId(1),
+                "Chiara".to_string(),
+                NaiveDate::from_ymd(1999, 6, 24)
+            )
+            .await
+            .is_ok());
+        // duped
+        assert!(repository
+            .insert_birthday(
+                ChatId(1),
+                "Chiara".to_string(),
+                NaiveDate::from_ymd(1999, 6, 24)
+            )
+            .await
+            .is_err());
+        // get birthdays
+        assert_eq!(repository.get_birthdays().await.unwrap().len(), 2);
+        // delete
+        assert!(repository.delete_birthday_by_chat(ChatId(1)).await.is_ok());
+        assert!(repository.get_birthdays().await.unwrap().is_empty());
+    }
+}

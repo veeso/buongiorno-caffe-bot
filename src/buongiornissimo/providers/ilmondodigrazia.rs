@@ -34,13 +34,15 @@ impl IlMondoDiGrazia {
         }
     }
 
+    fn buongiorno_weekday_url() -> String {
+        format!("{}{}", BUONGIORNO_WEEKDAY_BASE_URL, Self::weekday())
+    }
+
     fn get_url(media: Media) -> String {
         match media {
             Media::Auguri => AUGURI_URL.to_string(),
             Media::BuonGiorno => BUONGIORNO_URL.to_string(),
-            Media::BuonGiornoWeekday => {
-                format!("{}{}", BUONGIORNO_WEEKDAY_BASE_URL, Self::weekday())
-            }
+            Media::BuonGiornoWeekday => Self::buongiorno_weekday_url(),
             Media::BuonNatale => BUON_NATALE_URL.to_string(),
             Media::BuonPomeriggio => BUON_POMERIGGIO_URL.to_string(),
             Media::BuonaNotte => BUONA_NOTTE_URL.to_string(),
