@@ -2,11 +2,11 @@
 //!
 //! This module contains the interface to the bot repository
 
-use crate::repository::{chat::Chat, SqliteDb};
-
-use teloxide::types::ChatId;
-
 use super::Config;
+use crate::repository::{birthday::Birthday, chat::Chat, SqliteDb};
+
+use chrono::NaiveDate;
+use teloxide::types::ChatId;
 
 pub struct Repository {
     db: SqliteDb,
@@ -67,11 +67,74 @@ impl Repository {
     }
 
     /// Check whether `chat_id` is subscribed
-    async fn is_subscribed(&self, chat_id: &ChatId) -> anyhow::Result<bool> {
+    pub async fn is_subscribed(&self, chat_id: &ChatId) -> anyhow::Result<bool> {
         Ok(self
             .get_subscribed_chats()
             .await?
             .iter()
             .any(|x| x == chat_id))
+    }
+
+    // -- birthdays
+
+    /// Insert a chat to database
+    pub async fn insert_birthday(
+        &self,
+        chat: ChatId,
+        name: String,
+        date: NaiveDate,
+    ) -> anyhow::Result<()> {
+        if self.birthday_exists(&chat, &name, date).await? {
+            anyhow::bail!("Questo compleanno è già presente registrato")
+        }
+        Birthday::new(chat, name, date)
+            .insert(self.db.pool())
+            .await
+            .map_err(|e| anyhow::anyhow!("failed to insert birthdate into the database: {}", e))
+    }
+
+    /// Delete chat from database
+    pub async fn delete_birthday_by_chat(&self, chat: ChatId) -> anyhow::Result<()> {
+        Birthday::delete_by_chat(self.db.pool(), chat)
+            .await
+            .map_err(|e| anyhow::anyhow!("failed to delete birthday from the database: {}", e))
+    }
+
+    /// Get subscribed chats
+    pub async fn get_birthdays(&self) -> anyhow::Result<Vec<(ChatId, String, NaiveDate)>> {
+        Birthday::get_all(self.db.pool())
+            .await
+            .map_err(|e| anyhow::anyhow!("failed to collect birthdays: {}", e))
+            .map(|x| {
+                x.into_iter()
+                    .map(|x| {
+                        let date = x.date().unwrap();
+                        debug!(
+                            "found Birthday {} {} {} ({})",
+                            x.chat(),
+                            x.name(),
+                            date,
+                            x.created_at()
+                                .map(|x| x.to_rfc3339())
+                                .unwrap_or_else(|_| String::from("date error"))
+                        );
+                        (x.chat(), x.name().to_string(), date)
+                    })
+                    .collect()
+            })
+    }
+
+    /// Check whether `chat_id` is subscribed
+    async fn birthday_exists(
+        &self,
+        chat_id: &ChatId,
+        name: &str,
+        date: NaiveDate,
+    ) -> anyhow::Result<bool> {
+        Ok(self
+            .get_birthdays()
+            .await?
+            .iter()
+            .any(|(a, b, c)| a == chat_id && b == name && *c == date))
     }
 }

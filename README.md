@@ -76,6 +76,10 @@ buongiorno-caffe-bot is a Telegram bot to receive the best italian boomer flavou
 
 ## Command API 🐚
 
+- `/auguri`
+
+    get a happy birthday image
+
 - `/buongiornissimo`
 
     get a good morning image
@@ -90,11 +94,11 @@ buongiorno-caffe-bot is a Telegram bot to receive the best italian boomer flavou
 
 - `/buon-natale`
 
-    get a christmas image (works only on the 25th of december)
+    get a christmas image
 
-- `/buona-pasqua`
+- `/compleanno <name> <date>`
 
-    get a Easter image (works only on Easter)
+    configure a birthday
 
 - `/caffeee`
 
@@ -128,10 +132,9 @@ If you want to develop on this bot, you can follow these simple steps:
 2. Create your bot with the [Botfather](https://t.me/botfather)
 3. Get your API key
 4. Set your API key in your environment using the variable `TELOXIDE_TOKEN`
-5. Set your redis url in your environment using the variable `REDIS_URL`
-6. Set your database path in your environment using the variable `DATABASE_URI`
-7. Touch the database file `touch $DATABASE_URI`
-8. Run the buongiorno-caffe bot
+5. Set your database path in your environment using the variable `DATABASE_URI`
+6. Touch the database file `touch $DATABASE_URI`
+7. Run the buongiorno-caffe bot
 
 #### Deploy with heroku
 

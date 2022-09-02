@@ -6,16 +6,18 @@ mod answer;
 mod automatize;
 mod commands;
 mod config;
-mod redis;
 mod repository;
 
-use teloxide::{dispatching::update_listeners::webhooks, prelude::*, utils::command::BotCommands};
+use crate::buongiornissimo::{providers::IlMondoDiGrazia, Media, Scrape};
+use crate::utils::random as random_utils;
 
 use answer::{Answer, AnswerBuilder};
 use automatize::Automatizer;
+use chrono::NaiveDate;
 use commands::Command;
 pub use config::Config;
 use once_cell::sync::OnceCell;
+use teloxide::{dispatching::update_listeners::webhooks, prelude::*, utils::command::BotCommands};
 use url::Url;
 
 pub static AUTOMATIZER: OnceCell<Automatizer> = OnceCell::new();
@@ -29,7 +31,6 @@ impl Buongiornissimo {
     /// Initialize big luca
     pub async fn init() -> anyhow::Result<Self> {
         // parse configuration
-        let config = Config::try_from_env()?;
         if let Err(err) = Config::try_from_env() {
             return Err(err);
         }
@@ -89,6 +90,20 @@ impl Buongiornissimo {
         let answer = match command {
             Command::Help => Answer::simple_text(Command::descriptions()),
             Command::Start => Self::start(),
+            Command::Auguri { name } => Self::happy_birthday(&name).await,
+            Command::Buongiornissimo => {
+                Self::get_buongiornissimo(*random_utils::choice(&[
+                    Media::BuonGiorno,
+                    Media::BuonGiornoWeekday,
+                ]))
+                .await
+            }
+            Command::BuonNatale => Self::get_buongiornissimo(Media::BuonNatale).await,
+            Command::Buonanotte => Self::get_buongiornissimo(Media::BuonaNotte).await,
+            Command::Buonpomeriggio => Self::get_buongiornissimo(Media::BuonPomeriggio).await,
+            Command::Compleanno { name, date } => {
+                Self::subscribe_birthday(&message.chat.id, name, date).await
+            }
             Command::Caffeee => Self::subscribe_to_automatizer(&message.chat.id).await,
             Command::PuliziaKontatti => Self::unsubscribe_from_automatizer(&message.chat.id).await,
             Command::Release => Self::get_release(),
@@ -107,6 +122,44 @@ impl Buongiornissimo {
             "buongiorno-caffe-bot ☕ {}. Sviluppato da @veeso97. Contribuisci al progetto su Github https://github.com/veeso/buongiorno-caffe-bot. Sostieni il mio progetto su Ko-Fi https://ko-fi.com/veeso",
             env!("CARGO_PKG_VERSION")
         ))
+    }
+
+    /// Get buongiornissimo for media type
+    pub async fn get_buongiornissimo(media: Media) -> Answer {
+        match Self::get_buongiornissimo_image(media).await {
+            Ok(image) => AnswerBuilder::default().image(image).finalize(),
+            Err(err) => Self::error(err),
+        }
+    }
+
+    /// Get happy birthday answer
+    pub async fn happy_birthday(name: &str) -> Answer {
+        let image = match Self::get_buongiornissimo_image(Media::Auguri).await {
+            Ok(url) => url,
+            Err(err) => return Self::error(err),
+        };
+        AnswerBuilder::default()
+            .image(image)
+            .text(format!("Buon compleanno {}!", name))
+            .finalize()
+    }
+
+    /// Get buongiornissimo image for media type
+    pub async fn get_buongiornissimo_image(media: Media) -> anyhow::Result<Url> {
+        IlMondoDiGrazia::default()
+            .scrape(media)
+            .await
+            .map(|x| random_utils::choice(&x).clone())
+    }
+
+    /// Subscribe birthday
+    async fn subscribe_birthday(chat_id: &ChatId, name: String, date: NaiveDate) -> Answer {
+        match AUTOMATIZER.get().unwrap().add_birthday(chat_id, name, date).await {
+            Ok(_) => AnswerBuilder::default()
+            .text("Buongiorno, CAFFEEE?! ☕☕☕  Da ora riceverei gli auguri il giorno del tuo compleanno.")
+            .finalize(),
+            Err(err) => Self::error(err),
+        }
     }
 
     /// Subscribe chat to the automatizer

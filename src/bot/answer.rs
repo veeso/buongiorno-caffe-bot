@@ -3,6 +3,7 @@
 //! This module cares of providing answer script types and sending messages
 
 use teloxide::{prelude::*, types::InputFile};
+use url::Url;
 
 type AnswerResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
@@ -16,6 +17,11 @@ impl AnswerBuilder {
     /// Add text to script
     pub fn text(mut self, text: impl ToString) -> Self {
         self.answer.script.push(Media::Text(text.to_string()));
+        self
+    }
+
+    pub fn image(mut self, url: Url) -> Self {
+        self.answer.script.push(Media::Image(InputFile::url(url)));
         self
     }
 
@@ -35,6 +41,7 @@ pub struct Answer {
 /// A media in the chat
 enum Media {
     Text(String),
+    Image(InputFile),
 }
 
 impl Answer {
@@ -49,6 +56,7 @@ impl Answer {
     pub async fn send(self, bot: &AutoSend<Bot>, chat_id: ChatId) -> AnswerResult<()> {
         for message in self.script.into_iter() {
             match message {
+                Media::Image(image) => Self::send_image(bot, chat_id, image).await?,
                 Media::Text(text) => Self::send_text(bot, chat_id, text).await?,
             }
         }
@@ -58,6 +66,18 @@ impl Answer {
     /// Write text to chat
     async fn send_text(bot: &AutoSend<Bot>, chat_id: ChatId, message: String) -> AnswerResult<()> {
         bot.send_message(chat_id, message)
+            .await
+            .map(|_| ())
+            .map_err(|e| e.into())
+    }
+
+    /// Send image to chat
+    async fn send_image(
+        bot: &AutoSend<Bot>,
+        chat_id: ChatId,
+        image: InputFile,
+    ) -> AnswerResult<()> {
+        bot.send_photo(chat_id, image)
             .await
             .map(|_| ())
             .map_err(|e| e.into())

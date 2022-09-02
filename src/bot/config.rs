@@ -6,7 +6,6 @@
 /// Application config
 pub struct Config {
     pub database_url: String,
-    pub redis_url: String,
     pub teloxide_token: String,
 }
 

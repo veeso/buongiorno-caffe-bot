@@ -2,12 +2,10 @@
 //!
 //! A module to automatize messages
 
-use crate::bot::redis::RedisRepository;
-
 use super::repository::Repository;
 use super::AnswerBuilder;
 
-use once_cell::sync::OnceCell;
+use chrono::{Local, NaiveDate};
 use teloxide::prelude::*;
 use teloxide::types::ChatId;
 use thiserror::Error;
@@ -20,8 +18,6 @@ type AutomatizerResult<T> = Result<T, AutomatizerError>;
 pub enum AutomatizerError {
     #[error("scheduler error: {0}")]
     Scheduler(JobSchedulerError),
-    #[error("failed to setup aphorism jar")]
-    BadAphorisms,
 }
 
 impl From<JobSchedulerError> for AutomatizerError {
@@ -55,8 +51,32 @@ impl Automatizer {
     /// Unsubscribe chat from automatizer. If the chat is not currently subscribed, return error
     pub async fn unsubscribe(&self, chat: &ChatId) -> anyhow::Result<()> {
         let repository = Repository::connect().await?;
+        repository.delete_birthday_by_chat(*chat).await?;
+        info!("deleted birthdays associated to chat {}", chat);
         repository.delete_chat(*chat).await?;
         info!("unsubscribed {} from the automatizer", chat);
+        Ok(())
+    }
+
+    /// Add birthday to repository
+    pub async fn add_birthday(
+        &self,
+        chat: &ChatId,
+        name: String,
+        date: NaiveDate,
+    ) -> anyhow::Result<()> {
+        let repository = Repository::connect().await?;
+        // check whether chat is subscribed to automatic message
+        if !repository.is_subscribed(chat).await? {
+            anyhow::bail!("devi prima sottoscriverti ai messaggi automatici, prima di configurare un compleanno. Iscriviti con /caffeee");
+        }
+        repository
+            .insert_birthday(*chat, name.clone(), date)
+            .await?;
+        info!(
+            "registered birthday for {}, name {}, date: {}",
+            chat, name, date
+        );
         Ok(())
     }
 
@@ -84,6 +104,18 @@ impl Automatizer {
     pub async fn subscribed_chats() -> anyhow::Result<Vec<ChatId>> {
         let repository = Repository::connect().await?;
         repository.get_subscribed_chats().await
+    }
+
+    /// Retrieve today birthdays
+    async fn today_birthdays() -> anyhow::Result<Vec<(ChatId, String, NaiveDate)>> {
+        let repository = Repository::connect().await?;
+        let today = Local::today().naive_local();
+        Ok(repository
+            .get_birthdays()
+            .await?
+            .into_iter()
+            .filter(|(_, _, date)| *date == today)
+            .collect())
     }
 }
 

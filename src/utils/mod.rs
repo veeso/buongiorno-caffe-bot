@@ -2,4 +2,4 @@
 //!
 //! Utilities module
 
-pub mod str;
+pub mod random;

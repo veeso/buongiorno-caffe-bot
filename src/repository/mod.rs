@@ -2,7 +2,9 @@
 //!
 //! This module contains the trait and the model to implement to interact with the repository
 
+pub mod birthday;
 pub mod chat;
+
 use sqlx::sqlite::SqlitePool;
 use thiserror::Error;
 
@@ -48,11 +50,33 @@ impl SqliteDb {
     /// Init db tables
     async fn init_tables(&self) -> RepositoryResult<()> {
         debug!("initializing tables");
-        // chat table
+        self.init_chat_table().await?;
+        self.init_birthday_table().await
+    }
+
+    async fn init_birthday_table(&self) -> RepositoryResult<()> {
+        debug!("creating chat table");
+        sqlx::query(
+            r#"CREATE TABLE IF NOT EXISTS birthday (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            chat INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            date TEXT NOT NULL,
+            created_at TEXT NOT NULL
+          );"#,
+        )
+        .execute(self.pool())
+        .await
+        .map_err(RepositoryError::from)
+        .map(|_| ())
+    }
+
+    async fn init_chat_table(&self) -> RepositoryResult<()> {
+        debug!("creating chat table");
         sqlx::query(
             r#"CREATE TABLE IF NOT EXISTS chat (
             id INTEGER PRIMARY KEY,
-            created_at TEXT
+            created_at TEXT NOT NULL
           );"#,
         )
         .execute(self.pool())
