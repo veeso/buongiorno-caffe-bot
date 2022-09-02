@@ -58,6 +58,7 @@
     - [Users](#users)
     - [Developers](#developers)
       - [Deploy with heroku](#deploy-with-heroku)
+  - [Roadmap 🎯](#roadmap-)
   - [Support the developer ☕](#support-the-developer-)
   - [Powered by 💪](#powered-by-)
   - [Contributing and issues 🤝🏻](#contributing-and-issues-)
@@ -143,6 +144,13 @@ You can then deploy your own version of the buongiorno-caffe bot using `heroku`,
 1. Create your heroku app `heroku create --buildpack emk/rust`
 2. configure the Telegram API key with `heroku config:set TELEGRAM_API_KEY=<YOUR_API_KEY>`
 3. git push heroku main
+
+---
+
+## Roadmap 🎯
+
+1. Add more celebrations (such as valentine, 25th april, 2nd june, ...)
+2. Add more image providers such as <https://ticondivido.it> and <https://buongiornissimocaffe.it>
 
 ---
 
