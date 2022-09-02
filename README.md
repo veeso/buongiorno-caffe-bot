@@ -80,6 +80,10 @@ buongiorno-caffe-bot is a Telegram bot to receive the best italian boomer flavou
 
     get a good morning image
 
+- `/buonpomeriggio`
+
+    get a good afternoon image
+
 - `/buonanotte`
 
     get a good night image
@@ -123,10 +127,11 @@ If you want to develop on this bot, you can follow these simple steps:
 1. Clone this repository `git clone git@github.com:veeso/buongiorno-caffe-bot.git`
 2. Create your bot with the [Botfather](https://t.me/botfather)
 3. Get your API key
-4. Set your API key in your environment using the variable `TELEGRAM_API_KEY`
-5. Set your database path in your environment using the variable `DATABASE_URI`
-6. Touch the database file `touch $DATABASE_URI`
-7. Run the buongiorno-caffe bot
+4. Set your API key in your environment using the variable `TELOXIDE_TOKEN`
+5. Set your redis url in your environment using the variable `REDIS_URL`
+6. Set your database path in your environment using the variable `DATABASE_URI`
+7. Touch the database file `touch $DATABASE_URI`
+8. Run the buongiorno-caffe bot
 
 #### Deploy with heroku
 
@@ -154,7 +159,8 @@ You can make a donation with one of these platforms:
 
 ## Powered by 💪
 
-TODO: complete
+- [teloxide](https://github.com/teloxide/teloxide)
+- [tokio](https://tokio.rs/)
 
 ---
 
