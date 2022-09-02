@@ -89,7 +89,7 @@ impl Automatizer {
         // birthday job
         let happy_birthday_job = Job::new_async("0 30 8 * * *", |_, _| {
             Box::pin(async move {
-                info!("running morning_job");
+                info!("running happy_birthday_job");
                 if let Err(err) = Self::send_happy_birthday().await {
                     error!("happy_birthday_job failed: {}", err);
                 }
@@ -99,7 +99,7 @@ impl Automatizer {
         // aphorism jobs
         let good_morning_job = Job::new_async("0 30 6 * * *", |_, _| {
             Box::pin(async move {
-                info!("running morning_job");
+                info!("running good_morning_job");
                 if let Err(err) = Self::send_good_morning().await {
                     error!("good_morning_job failed: {}", err);
                 }
@@ -109,7 +109,7 @@ impl Automatizer {
 
         let good_afternoon_job = Job::new_async("0 40 12 * * *", |_, _| {
             Box::pin(async move {
-                info!("running afternoon_job");
+                info!("running good_afternoon_job");
                 if let Err(err) = Self::send_greeting(Media::BuonPomeriggio).await {
                     error!("good_afternoon_job failed: {}", err);
                 }
@@ -117,9 +117,9 @@ impl Automatizer {
         })?;
         sched.add(good_afternoon_job).await?;
 
-        let good_night_job = Job::new_async("0 40 12 * * *", |_, _| {
+        let good_night_job = Job::new_async("0 30 21 * * *", |_, _| {
             Box::pin(async move {
-                info!("running afternoon_job");
+                info!("running good_night_job");
                 if let Err(err) = Self::send_greeting(Media::BuonaNotte).await {
                     error!("good_night_job failed: {}", err);
                 }
