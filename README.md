@@ -92,7 +92,7 @@ buongiorno-caffe-bot is a Telegram bot to receive the best italian boomer flavou
 
     get a good night image
 
-- `/buon-natale`
+- `/buonnatale`
 
     get a christmas image
 
@@ -106,7 +106,7 @@ buongiorno-caffe-bot is a Telegram bot to receive the best italian boomer flavou
 
     > ❗ Automatic messages includes daily images
 
-- `/pulizia-kontatti`
+- `/puliziakontatti`
 
     Opt out from automatic messages
 

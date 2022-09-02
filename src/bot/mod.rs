@@ -113,7 +113,7 @@ impl Buongiornissimo {
 
     fn start() -> Answer {
         AnswerBuilder::default()
-            .text("CAFFEE!? ☕ Entra subito nel mondo dei buongiornissimi con /cafeee o se vuoi un dolce assaggio dei miei contenuti /buongiornissimo altrimenti invia /help per vedere tutti i comandi disponibili")
+            .text("CAFFEE!? ☕ Entra subito nel mondo dei buongiornissimi con /caffeee o se vuoi un dolce assaggio dei miei contenuti /buongiornissimo altrimenti invia /help per vedere tutti i comandi disponibili")
             .finalize()
     }
 

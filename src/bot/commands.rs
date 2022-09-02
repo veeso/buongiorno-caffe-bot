@@ -6,10 +6,7 @@ use chrono::NaiveDate;
 use teloxide::utils::command::BotCommands;
 
 #[derive(BotCommands, Clone, Debug)]
-#[command(
-    rename = "kebab-case",
-    description = "Questi comandi sono disponibili:"
-)]
+#[command(rename = "lowercase", description = "Questi comandi sono disponibili:")]
 pub enum Command {
     #[command(
         description = "ottieni un'immagine di buon compleanno",
