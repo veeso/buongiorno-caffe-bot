@@ -27,7 +27,7 @@ impl IlMondoDiGrazia {
             Weekday::Mon => "lunedi",
             Weekday::Tue => "martedi",
             Weekday::Wed => "mercoledi",
-            Weekday::Thu => "venerdi",
+            Weekday::Thu => "giovedi",
             Weekday::Fri => "venerdi",
             Weekday::Sat => "sabato",
             Weekday::Sun => "domenica",
