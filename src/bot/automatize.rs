@@ -2,13 +2,12 @@
 //!
 //! A module to automatize messages
 
-use crate::buongiornissimo::Media;
+use crate::buongiornissimo::Greeting;
 
 use super::repository::Repository;
 use super::AnswerBuilder;
-use crate::utils::random as random_utils;
 
-use chrono::{Datelike, Local, NaiveDate};
+use chrono::{Local, NaiveDate};
 use teloxide::prelude::*;
 use teloxide::types::ChatId;
 use thiserror::Error;
@@ -110,7 +109,7 @@ impl Automatizer {
         let good_afternoon_job = Job::new_async("0 40 12 * * *", |_, _| {
             Box::pin(async move {
                 info!("running good_afternoon_job");
-                if let Err(err) = Self::send_greeting(Media::BuonPomeriggio).await {
+                if let Err(err) = Self::send_greeting(Greeting::BuonPomeriggio).await {
                     error!("good_afternoon_job failed: {}", err);
                 }
             })
@@ -120,7 +119,7 @@ impl Automatizer {
         let good_night_job = Job::new_async("0 30 21 * * *", |_, _| {
             Box::pin(async move {
                 info!("running good_night_job");
-                if let Err(err) = Self::send_greeting(Media::BuonaNotte).await {
+                if let Err(err) = Self::send_greeting(Greeting::BuonaNotte).await {
                     error!("good_night_job failed: {}", err);
                 }
             })
@@ -140,7 +139,7 @@ impl Automatizer {
         if today_birthdays.is_empty() {
             return Ok(());
         }
-        let image = super::Buongiornissimo::get_buongiornissimo_image(Media::Auguri).await?;
+        let image = super::Buongiornissimo::get_buongiornissimo_image(Greeting::Compleanno).await?;
         let bot = Bot::from_env().auto_send();
         for (chat, name, _) in today_birthdays.into_iter() {
             if let Err(err) = AnswerBuilder::default()
@@ -158,15 +157,14 @@ impl Automatizer {
 
     /// Send good morning greeting
     async fn send_good_morning() -> anyhow::Result<()> {
-        let media = match Local::today().naive_local() {
-            date if date == NaiveDate::from_ymd(date.year(), 12, 25) => Media::BuonNatale,
-            _ => *random_utils::choice(&[Media::BuonGiorno, Media::BuonGiornoWeekday]),
-        };
-        Self::send_greeting(media).await
+        Self::send_greeting(
+            crate::bot::Buongiornissimo::get_buongiornissimo_greeting_based_on_day(),
+        )
+        .await
     }
 
     /// Send generic greeting
-    async fn send_greeting(media: Media) -> anyhow::Result<()> {
+    async fn send_greeting(media: Greeting) -> anyhow::Result<()> {
         let subscribed_chats = Self::subscribed_chats().await?;
         if subscribed_chats.is_empty() {
             return Ok(());

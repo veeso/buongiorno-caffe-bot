@@ -9,7 +9,7 @@ use teloxide::utils::command::BotCommands;
 #[command(rename = "lowercase", description = "Questi comandi sono disponibili:")]
 pub enum Command {
     #[command(
-        description = "ottieni un'immagine di buon compleanno",
+        description = "augura buon compleanno a qualcuno",
         parse_with = "split"
     )]
     Auguri { name: String },
@@ -19,8 +19,6 @@ pub enum Command {
     Buonpomeriggio,
     #[command(description = "ottieni un'immagine della buona notte")]
     Buonanotte,
-    #[command(description = "ottieni un'immagine del buon natale")]
-    BuonNatale,
     #[command(description = "iscriviti ai messaggi automatici")]
     Caffeee,
     #[command(description = "imposta un compleanno", parse_with = "split")]

@@ -2,7 +2,6 @@ auguri - <nome> ottieni un'immagine di buon compleanno,
 buongiornissimo - ottieni un'immagine del buongiorno
 buonpomeriggio - ottieni un'immagine del buon pomeriggio
 buonanotte - ottieni un'immagine della buona notte
-buonnatale - ottieni un'immagine del buon natale
 caffeee - iscriviti ai messaggi automatici
 compleanno - <nome> <data-yyyy-mm-dd> imposta un compleanno
 puliziakontatti - disinscriviti dai messaggi automatici

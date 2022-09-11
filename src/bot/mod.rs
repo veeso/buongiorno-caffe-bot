@@ -8,12 +8,12 @@ mod commands;
 mod config;
 mod repository;
 
-use crate::buongiornissimo::{providers::IlMondoDiGrazia, Media, Scrape};
+use crate::buongiornissimo::{providers::IlMondoDiGrazia, Greeting, Scrape};
 use crate::utils::random as random_utils;
 
 use answer::{Answer, AnswerBuilder};
 use automatize::Automatizer;
-use chrono::NaiveDate;
+use chrono::{Datelike, Local, NaiveDate};
 use commands::Command;
 pub use config::Config;
 use once_cell::sync::OnceCell;
@@ -91,16 +91,9 @@ impl Buongiornissimo {
             Command::Help => Answer::simple_text(Command::descriptions()),
             Command::Start => Self::start(),
             Command::Auguri { name } => Self::happy_birthday(&name).await,
-            Command::Buongiornissimo => {
-                Self::get_buongiornissimo(*random_utils::choice(&[
-                    Media::BuonGiorno,
-                    Media::BuonGiornoWeekday,
-                ]))
-                .await
-            }
-            Command::BuonNatale => Self::get_buongiornissimo(Media::BuonNatale).await,
-            Command::Buonanotte => Self::get_buongiornissimo(Media::BuonaNotte).await,
-            Command::Buonpomeriggio => Self::get_buongiornissimo(Media::BuonPomeriggio).await,
+            Command::Buongiornissimo => Self::get_buongiornissimo_buongiorno().await,
+            Command::Buonanotte => Self::get_buongiornissimo(Greeting::BuonaNotte).await,
+            Command::Buonpomeriggio => Self::get_buongiornissimo(Greeting::BuonPomeriggio).await,
             Command::Compleanno { name, date } => {
                 Self::subscribe_birthday(&message.chat.id, name, date).await
             }
@@ -124,8 +117,13 @@ impl Buongiornissimo {
         ))
     }
 
+    /// Get a buongiorno only image
+    pub async fn get_buongiornissimo_buongiorno() -> Answer {
+        Self::get_buongiornissimo(Self::get_buongiornissimo_greeting_based_on_day()).await
+    }
+
     /// Get buongiornissimo for media type
-    pub async fn get_buongiornissimo(media: Media) -> Answer {
+    pub async fn get_buongiornissimo(media: Greeting) -> Answer {
         match Self::get_buongiornissimo_image(media).await {
             Ok(image) => AnswerBuilder::default().image(image).finalize(),
             Err(err) => Self::error(err),
@@ -134,7 +132,7 @@ impl Buongiornissimo {
 
     /// Get happy birthday answer
     pub async fn happy_birthday(name: &str) -> Answer {
-        let image = match Self::get_buongiornissimo_image(Media::Auguri).await {
+        let image = match Self::get_buongiornissimo_image(Greeting::Compleanno).await {
             Ok(url) => url,
             Err(err) => return Self::error(err),
         };
@@ -144,8 +142,23 @@ impl Buongiornissimo {
             .finalize()
     }
 
+    /// Get buongiornissimo image based on day
+    pub fn get_buongiornissimo_greeting_based_on_day() -> Greeting {
+        match Local::today().naive_local() {
+            date if date.month() == 6 && date.day() == 2 => Greeting::FestaDellaRepubblica,
+            date if date.month() == 8 && date.day() == 15 => Greeting::Ferragosto,
+            date if date.month() == 10 && date.day() == 31 => Greeting::Halloween,
+            date if date.month() == 11 && date.day() == 1 => Greeting::Ognissanti,
+            date if date.month() == 11 && date.day() == 2 => Greeting::Defunti,
+            date if date.month() == 12 && date.day() == 8 => Greeting::ImmacolataConcenzione,
+            date if date.month() == 12 && date.day() == 24 => Greeting::VigiliaDiNatale,
+            date if date.month() == 12 && date.day() == 25 => Greeting::Natale,
+            _ => *random_utils::choice(&[Greeting::BuonGiorno, Greeting::BuonGiornoWeekday]),
+        }
+    }
+
     /// Get buongiornissimo image for media type
-    pub async fn get_buongiornissimo_image(media: Media) -> anyhow::Result<Url> {
+    pub async fn get_buongiornissimo_image(media: Greeting) -> anyhow::Result<Url> {
         IlMondoDiGrazia::default()
             .scrape(media)
             .await
@@ -154,9 +167,9 @@ impl Buongiornissimo {
 
     /// Subscribe birthday
     async fn subscribe_birthday(chat_id: &ChatId, name: String, date: NaiveDate) -> Answer {
-        match AUTOMATIZER.get().unwrap().add_birthday(chat_id, name, date).await {
+        match AUTOMATIZER.get().unwrap().add_birthday(chat_id, name.clone(), date).await {
             Ok(_) => AnswerBuilder::default()
-            .text("Buongiorno, CAFFEEE?! ☕☕☕  Da ora riceverei gli auguri il giorno del tuo compleanno.")
+            .text(format!("Buongiorno, CAFFEEE?! ☕☕☕  Da ora {} riceverà gli auguri il giorno del suo compleanno.", name))
             .finalize(),
             Err(err) => Self::error(err),
         }

@@ -11,6 +11,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - name: Setup
+        run: |
+          touch /tmp/test.db
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -21,6 +24,9 @@ jobs:
         with:
           command: test
           args: --no-fail-fast
+        env:
+          DATABASE_URL: /tmp/test.db
+          TELOXIDE_TOKEN: test
       - name: Format
         run: cargo fmt --all -- --check
       - name: Clippy

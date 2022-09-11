@@ -2,21 +2,33 @@
 //!
 //! This provider provides images from <https://ilmondodigrazia.com>
 
+use const_format::concatcp;
 use std::str::FromStr;
 
-use super::{Media, Scrape, Url};
+use super::{Greeting, Scrape, Url};
 
 use async_trait::async_trait;
 use chrono::{Datelike, Local, Weekday};
 use scraper::{Html, Selector};
 
-const AUGURI_URL: &str = "https://ilmondodigrazia.com/compleanno";
-const BUONGIORNO_URL: &str = "https://ilmondodigrazia.com/buongiorno";
-const BUONGIORNO_WEEKDAY_BASE_URL: &str = "https://ilmondodigrazia.com/buongiorno/buongiorno-";
-const BUON_NATALE_URL: &str =
-    "https://ilmondodigrazia.com/frasi-di-buon-natale-immagini-da-condividere";
-const BUON_POMERIGGIO_URL: &str = "https://ilmondodigrazia.com/buon-pomeriggio";
-const BUONA_NOTTE_URL: &str = "https://ilmondodigrazia.com/buonanotte";
+const BASE_URL: &str = "https://ilmondodigrazia.com";
+const AUGURI_URL: &str = concatcp!(BASE_URL, "/compleanno");
+const BUONGIORNO_URL: &str = concatcp!(BASE_URL, "buongiorno");
+const BUONGIORNO_WEEKDAY_BASE_URL: &str = concatcp!(BASE_URL, "/buongiorno/buongiorno-");
+const BUON_POMERIGGIO_URL: &str = concatcp!(BASE_URL, "/buon-pomeriggio");
+const BUONA_NOTTE_URL: &str = concatcp!(BASE_URL, "/buonanotte");
+const DUE_GIUGNO_URL: &str = concatcp!(BASE_URL, "/festa/festa-della-repubblica");
+const FERRAGOSTO_URL: &str = concatcp!(BASE_URL, "/buon-ferragosto");
+const OGNISSANTI_URL: &str = concatcp!(BASE_URL, "/tutti-i-santi-immagini-festa-di-ognissanti");
+const DUE_NOVEMBRE_URL: &str = concatcp!(BASE_URL, "/commemorazione-dei-defunti-2-novembre");
+const HALLOWEEN_URL: &str = concatcp!(BASE_URL, "/halloween-31-ottobre-immagini-buongiorno");
+const IMMACOLATA_CONCEZIONE_URL: &str =
+    concatcp!(BASE_URL, "/immacolata-concezione-8-dicembre-buongiorno");
+const VIGILIA_URL: &str = concatcp!(
+    BASE_URL,
+    "/buongiorno/buongiorno-vigilia-di-natale-per-il-24-dicembre"
+);
+const BUON_NATALE_URL: &str = concatcp!(BASE_URL, "/frasi-di-buon-natale-immagini-da-condividere");
 
 #[derive(Default)]
 pub struct IlMondoDiGrazia;
@@ -38,21 +50,28 @@ impl IlMondoDiGrazia {
         format!("{}{}", BUONGIORNO_WEEKDAY_BASE_URL, Self::weekday())
     }
 
-    fn get_url(media: Media) -> String {
+    fn get_url(media: Greeting) -> String {
         match media {
-            Media::Auguri => AUGURI_URL.to_string(),
-            Media::BuonGiorno => BUONGIORNO_URL.to_string(),
-            Media::BuonGiornoWeekday => Self::buongiorno_weekday_url(),
-            Media::BuonNatale => BUON_NATALE_URL.to_string(),
-            Media::BuonPomeriggio => BUON_POMERIGGIO_URL.to_string(),
-            Media::BuonaNotte => BUONA_NOTTE_URL.to_string(),
+            Greeting::Compleanno => AUGURI_URL.to_string(),
+            Greeting::BuonGiorno => BUONGIORNO_URL.to_string(),
+            Greeting::BuonGiornoWeekday => Self::buongiorno_weekday_url(),
+            Greeting::BuonPomeriggio => BUON_POMERIGGIO_URL.to_string(),
+            Greeting::BuonaNotte => BUONA_NOTTE_URL.to_string(),
+            Greeting::FestaDellaRepubblica => DUE_GIUGNO_URL.to_string(),
+            Greeting::Ferragosto => FERRAGOSTO_URL.to_string(),
+            Greeting::Ognissanti => OGNISSANTI_URL.to_string(),
+            Greeting::Defunti => DUE_NOVEMBRE_URL.to_string(),
+            Greeting::Halloween => HALLOWEEN_URL.to_string(),
+            Greeting::ImmacolataConcenzione => IMMACOLATA_CONCEZIONE_URL.to_string(),
+            Greeting::VigiliaDiNatale => VIGILIA_URL.to_string(),
+            Greeting::Natale => BUON_NATALE_URL.to_string(),
         }
     }
 }
 
 #[async_trait]
 impl Scrape for IlMondoDiGrazia {
-    async fn scrape(&self, media: Media) -> anyhow::Result<Vec<Url>> {
+    async fn scrape(&self, media: Greeting) -> anyhow::Result<Vec<Url>> {
         let url = Self::get_url(media);
         // send request
         let body = reqwest::get(&url)
@@ -106,7 +125,7 @@ mod test {
     #[tokio::test]
     async fn should_get_birthday_images() {
         assert!(!IlMondoDiGrazia::default()
-            .scrape(Media::Auguri)
+            .scrape(Greeting::Compleanno)
             .await
             .unwrap()
             .is_empty());
@@ -115,7 +134,7 @@ mod test {
     #[tokio::test]
     async fn should_get_goodmorning_images() {
         assert!(!IlMondoDiGrazia::default()
-            .scrape(Media::BuonGiorno)
+            .scrape(Greeting::BuonGiorno)
             .await
             .unwrap()
             .is_empty());
@@ -124,7 +143,7 @@ mod test {
     #[tokio::test]
     async fn should_get_weekday_images() {
         assert!(!IlMondoDiGrazia::default()
-            .scrape(Media::BuonGiornoWeekday)
+            .scrape(Greeting::BuonGiornoWeekday)
             .await
             .unwrap()
             .is_empty());
@@ -133,7 +152,7 @@ mod test {
     #[tokio::test]
     async fn should_get_christmas_images() {
         assert!(!IlMondoDiGrazia::default()
-            .scrape(Media::BuonNatale)
+            .scrape(Greeting::Natale)
             .await
             .unwrap()
             .is_empty());
@@ -142,7 +161,7 @@ mod test {
     #[tokio::test]
     async fn should_get_afternoon_images() {
         assert!(!IlMondoDiGrazia::default()
-            .scrape(Media::BuonPomeriggio)
+            .scrape(Greeting::BuonPomeriggio)
             .await
             .unwrap()
             .is_empty());
@@ -151,7 +170,7 @@ mod test {
     #[tokio::test]
     async fn should_get_night_images() {
         assert!(!IlMondoDiGrazia::default()
-            .scrape(Media::BuonaNotte)
+            .scrape(Greeting::BuonaNotte)
             .await
             .unwrap()
             .is_empty());

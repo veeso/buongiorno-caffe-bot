@@ -2,7 +2,7 @@
 //!
 //! This module exposes all the different providers
 
-use super::{Media, Scrape, Url};
+use super::{Greeting, Scrape, Url};
 
 mod ilmondodigrazia;
 

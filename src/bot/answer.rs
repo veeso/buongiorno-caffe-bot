@@ -16,12 +16,14 @@ pub struct AnswerBuilder {
 impl AnswerBuilder {
     /// Add text to script
     pub fn text(mut self, text: impl ToString) -> Self {
-        self.answer.script.push(Media::Text(text.to_string()));
+        self.answer.script.push(Greeting::Text(text.to_string()));
         self
     }
 
     pub fn image(mut self, url: Url) -> Self {
-        self.answer.script.push(Media::Image(InputFile::url(url)));
+        self.answer
+            .script
+            .push(Greeting::Image(InputFile::url(url)));
         self
     }
 
@@ -34,12 +36,12 @@ impl AnswerBuilder {
 /// The answer to send to the chat
 #[derive(Default, Clone)]
 pub struct Answer {
-    script: Vec<Media>,
+    script: Vec<Greeting>,
 }
 
 #[derive(Clone)]
 /// A media in the chat
-enum Media {
+enum Greeting {
     Text(String),
     Image(InputFile),
 }
@@ -48,7 +50,7 @@ impl Answer {
     /// Build a simple one text answer
     pub fn simple_text(text: impl ToString) -> Self {
         Self {
-            script: vec![Media::Text(text.to_string())],
+            script: vec![Greeting::Text(text.to_string())],
         }
     }
 
@@ -56,8 +58,8 @@ impl Answer {
     pub async fn send(self, bot: &AutoSend<Bot>, chat_id: ChatId) -> AnswerResult<()> {
         for message in self.script.into_iter() {
             match message {
-                Media::Image(image) => Self::send_image(bot, chat_id, image).await?,
-                Media::Text(text) => Self::send_text(bot, chat_id, text).await?,
+                Greeting::Image(image) => Self::send_image(bot, chat_id, image).await?,
+                Greeting::Text(text) => Self::send_text(bot, chat_id, text).await?,
             }
         }
         Ok(())
