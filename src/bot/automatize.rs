@@ -2,10 +2,11 @@
 //!
 //! A module to automatize messages
 
-use crate::buongiornissimo::Greeting;
+use buongiornissimo_rs::Greeting;
 
 use super::repository::Repository;
 use super::AnswerBuilder;
+use crate::utils::random as random_utils;
 
 use chrono::{Local, NaiveDate};
 use teloxide::prelude::*;
@@ -139,7 +140,7 @@ impl Automatizer {
         if today_birthdays.is_empty() {
             return Ok(());
         }
-        let image = super::Buongiornissimo::get_buongiornissimo_image(Greeting::Compleanno).await?;
+        let image = super::Buongiornissimo::get_greeting_image(Greeting::Compleanno).await?;
         let bot = Bot::from_env().auto_send();
         for (chat, name, _) in today_birthdays.into_iter() {
             if let Err(err) = AnswerBuilder::default()
@@ -157,9 +158,10 @@ impl Automatizer {
 
     /// Send good morning greeting
     async fn send_good_morning() -> anyhow::Result<()> {
-        Self::send_greeting(
-            crate::bot::Buongiornissimo::get_buongiornissimo_greeting_based_on_day(),
-        )
+        Self::send_greeting(buongiornissimo_rs::greeting_of_the_day(
+            Local::today().naive_local(),
+            *random_utils::choice(&[true, false]),
+        ))
         .await
     }
 
@@ -169,7 +171,7 @@ impl Automatizer {
         if subscribed_chats.is_empty() {
             return Ok(());
         }
-        let greeting = super::Buongiornissimo::get_buongiornissimo_image(media).await?;
+        let greeting = super::Buongiornissimo::get_greeting_image(media).await?;
         let answer = AnswerBuilder::default().image(greeting).finalize();
         let bot = Bot::from_env().auto_send();
         for chat in subscribed_chats.iter() {

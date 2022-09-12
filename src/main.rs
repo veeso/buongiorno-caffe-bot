@@ -7,7 +7,6 @@ extern crate serde;
 extern crate tracing;
 
 mod bot;
-mod buongiornissimo;
 mod repository;
 mod utils;
 

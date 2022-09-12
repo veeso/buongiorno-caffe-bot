@@ -8,12 +8,12 @@ mod commands;
 mod config;
 mod repository;
 
-use crate::buongiornissimo::{providers::IlMondoDiGrazia, Greeting, Scrape};
 use crate::utils::random as random_utils;
 
 use answer::{Answer, AnswerBuilder};
 use automatize::Automatizer;
-use chrono::{Datelike, Local, NaiveDate};
+use buongiornissimo_rs::{BuongiornissimoCaffe, Greeting, IlMondoDiGrazia, Scrape, ScrapeError};
+use chrono::{Local, NaiveDate};
 use commands::Command;
 pub use config::Config;
 use once_cell::sync::OnceCell;
@@ -119,12 +119,16 @@ impl Buongiornissimo {
 
     /// Get a buongiorno only image
     pub async fn get_buongiornissimo_buongiorno() -> Answer {
-        Self::get_buongiornissimo(Self::get_buongiornissimo_greeting_based_on_day()).await
+        Self::get_buongiornissimo(buongiornissimo_rs::greeting_of_the_day(
+            Local::today().naive_local(),
+            *random_utils::choice(&[true, false]),
+        ))
+        .await
     }
 
     /// Get buongiornissimo for media type
     pub async fn get_buongiornissimo(media: Greeting) -> Answer {
-        match Self::get_buongiornissimo_image(media).await {
+        match Self::get_greeting_image(media).await {
             Ok(image) => AnswerBuilder::default().image(image).finalize(),
             Err(err) => Self::error(err),
         }
@@ -132,7 +136,7 @@ impl Buongiornissimo {
 
     /// Get happy birthday answer
     pub async fn happy_birthday(name: &str) -> Answer {
-        let image = match Self::get_buongiornissimo_image(Greeting::Compleanno).await {
+        let image = match Self::get_greeting_image(Greeting::Compleanno).await {
             Ok(url) => url,
             Err(err) => return Self::error(err),
         };
@@ -142,27 +146,48 @@ impl Buongiornissimo {
             .finalize()
     }
 
-    /// Get buongiornissimo image based on day
-    pub fn get_buongiornissimo_greeting_based_on_day() -> Greeting {
-        match Local::today().naive_local() {
-            date if date.month() == 6 && date.day() == 2 => Greeting::FestaDellaRepubblica,
-            date if date.month() == 8 && date.day() == 15 => Greeting::Ferragosto,
-            date if date.month() == 10 && date.day() == 31 => Greeting::Halloween,
-            date if date.month() == 11 && date.day() == 1 => Greeting::Ognissanti,
-            date if date.month() == 11 && date.day() == 2 => Greeting::Defunti,
-            date if date.month() == 12 && date.day() == 8 => Greeting::ImmacolataConcenzione,
-            date if date.month() == 12 && date.day() == 24 => Greeting::VigiliaDiNatale,
-            date if date.month() == 12 && date.day() == 25 => Greeting::Natale,
-            _ => *random_utils::choice(&[Greeting::BuonGiorno, Greeting::BuonGiornoWeekday]),
+    /// Get greeting image for media type.
+    /// At the first try it'll use a random provider; then if the media type is not supported, it tries all the different providers
+    pub async fn get_greeting_image(media: Greeting) -> anyhow::Result<Url> {
+        match random_utils::choice(&[0, 1]) {
+            0 => Self::do_get_greeting_image(IlMondoDiGrazia::default(), media).await,
+            _ => Self::do_get_greeting_image(BuongiornissimoCaffe::default(), media).await,
         }
     }
 
-    /// Get buongiornissimo image for media type
-    pub async fn get_buongiornissimo_image(media: Greeting) -> anyhow::Result<Url> {
-        IlMondoDiGrazia::default()
-            .scrape(media)
-            .await
-            .map(|x| random_utils::choice(&x).clone())
+    async fn do_get_greeting_image(
+        provider: impl Scrape,
+        greeting: Greeting,
+    ) -> anyhow::Result<Url> {
+        match provider.scrape(greeting).await {
+            Ok(urls) => Ok(random_utils::choice(&urls).clone()),
+            Err(ScrapeError::UnsupportedGreeting) => Self::try_all_providers(greeting).await,
+            Err(err) => anyhow::bail!("failed to scrape image: {}", err),
+        }
+    }
+
+    /// Try all previders for media
+    async fn try_all_providers(media: Greeting) -> anyhow::Result<Url> {
+        if let Ok(urls) = IlMondoDiGrazia::default().scrape(media).await {
+            return Ok(random_utils::choice(&urls).clone());
+        }
+        if let Ok(urls) = BuongiornissimoCaffe::default().scrape(media).await {
+            return Ok(random_utils::choice(&urls).clone());
+        }
+
+        // try to get buongiorno
+        match random_utils::choice(&[0, 1]) {
+            0 => IlMondoDiGrazia::default()
+                .scrape(Greeting::BuonGiorno)
+                .await
+                .map(|urls| random_utils::choice(&urls).clone())
+                .map_err(|e| anyhow::anyhow!("failed to scrape image: {}", e)),
+            _ => BuongiornissimoCaffe::default()
+                .scrape(Greeting::BuonGiorno)
+                .await
+                .map(|urls| random_utils::choice(&urls).clone())
+                .map_err(|e| anyhow::anyhow!("failed to scrape image: {}", e)),
+        }
     }
 
     /// Subscribe birthday
