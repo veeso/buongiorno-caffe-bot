@@ -8,7 +8,7 @@ use super::repository::Repository;
 use super::AnswerBuilder;
 use crate::utils::random as random_utils;
 
-use chrono::{Local, NaiveDate};
+use chrono::{Datelike, Local, NaiveDate};
 use teloxide::prelude::*;
 use teloxide::types::ChatId;
 use thiserror::Error;
@@ -195,7 +195,7 @@ impl Automatizer {
             .get_birthdays()
             .await?
             .into_iter()
-            .filter(|(_, _, date)| *date == today)
+            .filter(|(_, _, date)| date.month() == today.month() && date.day() == today.day())
             .collect())
     }
 }

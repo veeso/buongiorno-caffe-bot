@@ -7,7 +7,7 @@
 <p align="center">~ The best italian boomer flavoured good morning and coffee moka related images at your command ~</p>
 
 <p align="center">Developed by <a href="https://veeso.github.io/" target="_blank">@veeso</a></p>
-<p align="center">Current version: 0.2.0 (08/09/2022)</p>
+<p align="center">Current version: 0.2.1 (21/09/2022)</p>
 
 <p align="center">
   <a href="https://opensource.org/licenses/Unlicense"

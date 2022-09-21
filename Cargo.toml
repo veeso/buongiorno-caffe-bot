@@ -10,7 +10,7 @@ license = "Unlicense"
 name = "buongiorno-caffe-bot"
 readme = "README.md"
 repository = "https://github.com/veeso/buongiorno-caffe-bot"
-version = "0.2.0"
+version = "0.2.1"
 
 [[bin]]
 name = "buongiorno-caffe-bot"
