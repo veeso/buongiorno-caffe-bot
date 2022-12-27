@@ -93,10 +93,6 @@ buongiorno-caffe-bot is a Telegram bot to receive the best italian boomer flavou
 
     get a good night image
 
-- `/buonnatale`
-
-    get a christmas image
-
 - `/compleanno <name> <date>`
 
     configure a birthday
