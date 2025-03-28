@@ -127,7 +127,7 @@ buongiorno-caffe-bot is a Telegram bot to receive the best italian boomer flavou
 
 ### Users
 
-Scan this QR code or go to this URL <https://t.me/buongiornocaffe_bot> to start a chat with Big Luca bot, then add it to any group or chat directly with him.
+Scan this QR code or go to this URL <https://t.me/buongiornocaffe_bot> to start a chat with buongiorno-caffe-bot, then add it to any group or chat directly with him.
 
 ![telegram-qr](/docs/images/qr-code-md.webp)
 
