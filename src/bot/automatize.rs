@@ -90,13 +90,6 @@ impl Automatizer {
 
         let sched = JobScheduler::new().await?;
 
-        let ping_job = Job::new_async_tz("1/5 * * * * *", timezone, |_, _| {
-            Box::pin(async move {
-                debug!("running ping_job");
-            })
-        })?;
-        sched.add(ping_job).await?;
-
         // birthday job
         let happy_birthday_job = Job::new_async_tz("0 30 8 * * *", timezone, |_, _| {
             Box::pin(async move {
@@ -120,7 +113,7 @@ impl Automatizer {
         sched.add(good_morning_job).await?;
 
         // buon weekend
-        let good_weekend_job = Job::new_async_tz("0 55 17 * * Sun,Sat", timezone, |_, _| {
+        let good_weekend_job = Job::new_async_tz("0 15 20 * * Fri", timezone, |_, _| {
             Box::pin(async move {
                 info!("running good_weekend_job");
                 if let Err(err) = Self::send_greeting(Greeting::Weekend).await {
