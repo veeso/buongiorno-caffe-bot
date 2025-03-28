@@ -97,7 +97,8 @@ impl Automatizer {
             })
         })?;
         sched.add(happy_birthday_job).await?;
-        // aphorism jobs
+
+        // good morning
         let good_morning_job = Job::new_async("0 30 6 * * *", |_, _| {
             Box::pin(async move {
                 info!("running good_morning_job");
@@ -108,6 +109,18 @@ impl Automatizer {
         })?;
         sched.add(good_morning_job).await?;
 
+        // buon pranzo
+        let good_lunch_job = Job::new_async("0 30 12 * * *", |_, _| {
+            Box::pin(async move {
+                info!("running good_lunch_job");
+                if let Err(err) = Self::send_greeting(Greeting::BuonPranzo).await {
+                    error!("good_lunch_job failed: {}", err);
+                }
+            })
+        })?;
+        sched.add(good_lunch_job).await?;
+
+        // buon pomeriggio
         let good_afternoon_job = Job::new_async("0 40 12 * * *", |_, _| {
             Box::pin(async move {
                 info!("running good_afternoon_job");
@@ -118,6 +131,29 @@ impl Automatizer {
         })?;
         sched.add(good_afternoon_job).await?;
 
+        // buona serata
+        let good_evening_job = Job::new_async("0 30 18 * * *", |_, _| {
+            Box::pin(async move {
+                info!("running good_evening_job");
+                if let Err(err) = Self::send_greeting(Greeting::BuonaSerata).await {
+                    error!("good_evening_job failed: {}", err);
+                }
+            })
+        })?;
+        sched.add(good_evening_job).await?;
+
+        // buona cena
+        let good_dinner_job = Job::new_async("0 0 20 * * *", |_, _| {
+            Box::pin(async move {
+                info!("running good_dinner_job");
+                if let Err(err) = Self::send_greeting(Greeting::BuonaCena).await {
+                    error!("good_dinner_job failed: {}", err);
+                }
+            })
+        })?;
+        sched.add(good_dinner_job).await?;
+
+        // buona notte
         let good_night_job = Job::new_async("0 30 21 * * *", |_, _| {
             Box::pin(async move {
                 info!("running good_night_job");
