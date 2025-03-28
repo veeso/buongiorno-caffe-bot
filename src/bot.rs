@@ -65,6 +65,10 @@ impl Buongiornissimo {
             Command::Buongiornissimo => Self::get_buongiornissimo_buongiorno().await,
             Command::Buonanotte => Self::get_buongiornissimo(Greeting::BuonaNotte).await,
             Command::Buonpomeriggio => Self::get_buongiornissimo(Greeting::BuonPomeriggio).await,
+            Command::Buonpranzo => Self::get_buongiornissimo(Greeting::BuonPranzo).await,
+            Command::Buonacena => Self::get_buongiornissimo(Greeting::BuonaCena).await,
+            Command::Buonaserata => Self::get_buongiornissimo(Greeting::BuonaSerata).await,
+            Command::Buonweekend => Self::get_buongiornissimo(Greeting::Weekend).await,
             Command::Compleanno { name, date } => {
                 Self::subscribe_birthday(&message.chat.id, name, date).await
             }

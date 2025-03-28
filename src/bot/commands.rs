@@ -22,6 +22,14 @@ pub enum Command {
     Buonpomeriggio,
     #[command(description = "ottieni un'immagine della buona notte")]
     Buonanotte,
+    #[command(description = "ottieni un'immagine del buon pranzo")]
+    Buonpranzo,
+    #[command(description = "ottieni un'immagine di buona cena")]
+    Buonacena,
+    #[command(description = "ottieni un'immagine di buona serata")]
+    Buonaserata,
+    #[command(description = "ottieni un'immagine di buon weekend")]
+    Buonweekend,
     #[command(description = "iscriviti ai messaggi automatici")]
     Caffeee,
     #[command(description = "imposta un compleanno", parse_with = "split")]

@@ -14,6 +14,11 @@
 Released on 28/03/2025
 
 - buongiornissimo-rs 0.3
+- New commands:
+  - `/buonaserata`
+  - `/buonweekend`
+  - `/buonpranzo`
+  - `/buonacena`
 
 ## 0.2.1
 
