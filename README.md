@@ -1,13 +1,13 @@
 # buongiorno-caffe-bot
 
 <p align="center">
-  <img src="/docs/images/buongiorno-caffe-bot.png" width="256" height="256" />
+  <img src="/docs/images/buongiorno-caffe-bot.png" alt="logo" width="256" height="256" />
 </p>
 
 <p align="center">~ The best italian boomer flavoured good morning and coffee moka related images at your command ~</p>
 
-<p align="center">Developed by <a href="https://veeso.github.io/" target="_blank">@veeso</a></p>
-<p align="center">Current version: 0.2.1 (21/09/2022)</p>
+<p align="center">Developed by <a href="https://veeso.me" target="_blank">@veeso</a></p>
+<p align="center">Current version: 0.3.0 (28/03/2025)</p>
 
 <p align="center">
   <a href="https://opensource.org/licenses/Unlicense"
@@ -37,15 +37,10 @@
   /></a>
 </p>
 <p align="center">
-  <a href="https://github.com/veeso/buongiorno-caffe-bot/actions"
+  <a href="https://github.com/veeso/buongiorno-caffe-bot/actions/workflows/build.yml"
     ><img
       src="https://github.com/veeso/buongiorno-caffe-bot/workflows/Build/badge.svg"
       alt="Build CI"
-  /></a>
-  <a href="https://coveralls.io/github/veeso/buongiorno-caffe-bot"
-    ><img
-      src="https://coveralls.io/repos/github/veeso/buongiorno-caffe-bot/badge.svg"
-      alt="Coveralls"
   /></a>
 </p>
 
@@ -57,7 +52,6 @@
   - [Get started 🏁](#get-started-)
     - [Users](#users)
     - [Developers](#developers)
-      - [Deploy with heroku](#deploy-with-heroku)
   - [Roadmap 🎯](#roadmap-)
   - [Support the developer ☕](#support-the-developer-)
   - [Powered by 💪](#powered-by-)
@@ -133,14 +127,6 @@ If you want to develop on this bot, you can follow these simple steps:
 6. Touch the database file `touch $DATABASE_URI`
 7. Run the buongiorno-caffe bot
 
-#### Deploy with heroku
-
-You can then deploy your own version of the buongiorno-caffe bot using `heroku`, with these simple steps:
-
-1. Create your heroku app `heroku create --buildpack emk/rust`
-2. configure the Telegram API key with `heroku config:set TELEGRAM_API_KEY=<YOUR_API_KEY>`
-3. git push heroku main
-
 ---
 
 ## Roadmap 🎯
@@ -158,8 +144,6 @@ You can make a donation with one of these platforms:
 
 [![ko-fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/veeso)
 [![PayPal](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.me/chrisintin)
-[![bitcoin](https://img.shields.io/badge/Bitcoin-ff9416?style=for-the-badge&logo=bitcoin&logoColor=white)](https://btc.com/bc1qvlmykjn7htz0vuprmjrlkwtv9m9pan6kylsr8w)
-[![litecoin](https://img.shields.io/badge/Litecoin-345d9d?style=for-the-badge&logo=Litecoin&logoColor=white)](https://blockchair.com/litecoin/address/ltc1q89a7f859gt7nuekvnuuc25wapkq2f8ny78mp8l)
 
 ---
 

@@ -11,22 +11,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Setup
-        run: |
-          touch /tmp/test.db
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          override: true
           components: rustfmt, clippy
       - name: Run tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --no-fail-fast
+        run: cargo test --no-fail-fast
         env:
-          DATABASE_URL: /tmp/test.db
-          TELOXIDE_TOKEN: test
+          RUST_LOG: trace
       - name: Format
         run: cargo fmt --all -- --check
       - name: Clippy

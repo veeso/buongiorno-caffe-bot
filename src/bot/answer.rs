@@ -2,10 +2,9 @@
 //!
 //! This module cares of providing answer script types and sending messages
 
-use teloxide::{prelude::*, types::InputFile};
+use teloxide::prelude::*;
+use teloxide::types::InputFile;
 use url::Url;
-
-type AnswerResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 /// A helper to build composed answers
 #[derive(Default)]
@@ -55,7 +54,7 @@ impl Answer {
     }
 
     /// Send answer
-    pub async fn send(self, bot: &AutoSend<Bot>, chat_id: ChatId) -> AnswerResult<()> {
+    pub async fn send(self, bot: &Bot, chat_id: ChatId) -> ResponseResult<()> {
         for message in self.script.into_iter() {
             match message {
                 Greeting::Image(image) => Self::send_image(bot, chat_id, image).await?,
@@ -66,22 +65,12 @@ impl Answer {
     }
 
     /// Write text to chat
-    async fn send_text(bot: &AutoSend<Bot>, chat_id: ChatId, message: String) -> AnswerResult<()> {
-        bot.send_message(chat_id, message)
-            .await
-            .map(|_| ())
-            .map_err(|e| e.into())
+    async fn send_text(bot: &Bot, chat_id: ChatId, message: String) -> ResponseResult<()> {
+        bot.send_message(chat_id, message).await.map(|_| ())
     }
 
     /// Send image to chat
-    async fn send_image(
-        bot: &AutoSend<Bot>,
-        chat_id: ChatId,
-        image: InputFile,
-    ) -> AnswerResult<()> {
-        bot.send_photo(chat_id, image)
-            .await
-            .map(|_| ())
-            .map_err(|e| e.into())
+    async fn send_image(bot: &Bot, chat_id: ChatId, image: InputFile) -> ResponseResult<()> {
+        bot.send_photo(chat_id, image).await.map(|_| ())
     }
 }

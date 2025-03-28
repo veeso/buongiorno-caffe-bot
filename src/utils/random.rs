@@ -6,8 +6,8 @@ use rand::Rng;
 
 /// Choose a random element from `choices`
 pub fn choice<T>(choices: &[T]) -> &T {
-    let mut rng = rand::thread_rng();
-    &choices[rng.gen_range(0..choices.len())]
+    let mut rng = rand::rng();
+    &choices[rng.random_range(0..choices.len())]
 }
 
 #[cfg(test)]

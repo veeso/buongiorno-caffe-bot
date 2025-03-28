@@ -4,11 +4,11 @@
 
 use std::str::FromStr;
 
-use super::{RepositoryError, RepositoryResult};
-
 use chrono::{DateTime, FixedOffset, NaiveDate, Utc};
 use sqlx::{Pool, Sqlite};
 use teloxide::types::ChatId;
+
+use super::{RepositoryError, RepositoryResult};
 
 #[derive(sqlx::FromRow, Debug, Clone, Eq, PartialEq)]
 pub struct Birthday {
@@ -106,7 +106,7 @@ mod test {
         let chat = Birthday::new(
             ChatId(32),
             "pippo".to_string(),
-            NaiveDate::from_ymd(1997, 5, 30),
+            NaiveDate::from_ymd_opt(1997, 5, 30).unwrap(),
         );
         assert!(chat.insert(db.pool()).await.is_ok());
         drop(temp)
@@ -118,12 +118,14 @@ mod test {
         let birthday = Birthday::new(
             ChatId(1),
             "pippo".to_string(),
-            NaiveDate::from_ymd(1997, 5, 30),
+            NaiveDate::from_ymd_opt(1997, 5, 30).unwrap(),
         );
         assert!(birthday.insert(db.pool()).await.is_ok());
-        assert!(Birthday::delete_by_chat(db.pool(), birthday.chat())
-            .await
-            .is_ok());
+        assert!(
+            Birthday::delete_by_chat(db.pool(), birthday.chat())
+                .await
+                .is_ok()
+        );
         drop(temp)
     }
 
@@ -134,17 +136,17 @@ mod test {
             Birthday::new(
                 ChatId(1),
                 "pippo".to_string(),
-                NaiveDate::from_ymd(1997, 5, 30),
+                NaiveDate::from_ymd_opt(1997, 5, 30).unwrap(),
             ),
             Birthday::new(
                 ChatId(2),
                 "pippo".to_string(),
-                NaiveDate::from_ymd(1997, 5, 30),
+                NaiveDate::from_ymd_opt(1997, 5, 30).unwrap(),
             ),
             Birthday::new(
                 ChatId(3),
                 "pippo".to_string(),
-                NaiveDate::from_ymd(1997, 5, 30),
+                NaiveDate::from_ymd_opt(1997, 5, 30).unwrap(),
             ),
         ];
         for chat in chats.iter() {

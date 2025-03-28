@@ -2,11 +2,13 @@
 //!
 //! This module contains the interface to the bot repository
 
-use super::Config;
-use crate::repository::{birthday::Birthday, chat::Chat, SqliteDb};
-
 use chrono::NaiveDate;
 use teloxide::types::ChatId;
+
+use super::Config;
+use crate::repository::SqliteDb;
+use crate::repository::birthday::Birthday;
+use crate::repository::chat::Chat;
 
 pub struct Repository {
     db: SqliteDb,
@@ -140,15 +142,20 @@ impl Repository {
 #[cfg(test)]
 mod test {
 
-    use super::*;
+    use std::time::Duration;
 
     use pretty_assertions::assert_eq;
     use tempfile::NamedTempFile;
 
+    use super::*;
+
     #[tokio::test]
     async fn should_handle_chats() {
         let database = NamedTempFile::new().unwrap();
-        std::env::set_var("DATABASE_URL", database.path());
+        unsafe {
+            std::env::set_var("DATABASE_URL", database.path());
+            std::env::set_var("TELOXIDE_TOKEN", "123");
+        }
         let repository = Repository::connect().await.unwrap();
         assert!(repository.insert_chat(ChatId(1)).await.is_ok());
         assert!(repository.insert_chat(ChatId(2)).await.is_ok());
@@ -163,33 +170,43 @@ mod test {
     #[tokio::test]
     async fn should_handle_birthdays() {
         let database = NamedTempFile::new().unwrap();
-        std::env::set_var("DATABASE_URL", database.path());
+        unsafe {
+            std::env::set_var("DATABASE_URL", database.path());
+            std::env::set_var("TELOXIDE_TOKEN", "123");
+        }
+        std::thread::sleep(Duration::from_secs(1));
         let repository = Repository::connect().await.unwrap();
-        assert!(repository
-            .insert_birthday(
-                ChatId(1),
-                "Christian".to_string(),
-                NaiveDate::from_ymd(1997, 5, 30)
-            )
-            .await
-            .is_ok());
-        assert!(repository
-            .insert_birthday(
-                ChatId(1),
-                "Chiara".to_string(),
-                NaiveDate::from_ymd(1999, 6, 24)
-            )
-            .await
-            .is_ok());
+        assert!(
+            repository
+                .insert_birthday(
+                    ChatId(1),
+                    "Christian".to_string(),
+                    NaiveDate::from_ymd_opt(1997, 5, 30).unwrap()
+                )
+                .await
+                .is_ok()
+        );
+        assert!(
+            repository
+                .insert_birthday(
+                    ChatId(1),
+                    "Chiara".to_string(),
+                    NaiveDate::from_ymd_opt(1999, 6, 24).unwrap()
+                )
+                .await
+                .is_ok()
+        );
         // duped
-        assert!(repository
-            .insert_birthday(
-                ChatId(1),
-                "Chiara".to_string(),
-                NaiveDate::from_ymd(1999, 6, 24)
-            )
-            .await
-            .is_err());
+        assert!(
+            repository
+                .insert_birthday(
+                    ChatId(1),
+                    "Chiara".to_string(),
+                    NaiveDate::from_ymd_opt(1999, 6, 24).unwrap()
+                )
+                .await
+                .is_err()
+        );
         // get birthdays
         assert_eq!(repository.get_birthdays().await.unwrap().len(), 2);
         // delete

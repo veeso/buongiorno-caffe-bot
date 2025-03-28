@@ -3,16 +3,15 @@
 //! A module to automatize messages
 
 use buongiornissimo_rs::Greeting;
-
-use super::repository::Repository;
-use super::AnswerBuilder;
-use crate::utils::random as random_utils;
-
 use chrono::{Datelike, Local, NaiveDate};
 use teloxide::prelude::*;
 use teloxide::types::ChatId;
 use thiserror::Error;
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
+
+use super::AnswerBuilder;
+use super::repository::Repository;
+use crate::utils::random as random_utils;
 
 type AutomatizerResult<T> = Result<T, AutomatizerError>;
 
@@ -71,7 +70,9 @@ impl Automatizer {
         let repository = Repository::connect().await?;
         // check whether chat is subscribed to automatic message
         if !repository.is_subscribed(chat).await? {
-            anyhow::bail!("devi prima sottoscriverti ai messaggi automatici, prima di configurare un compleanno. Iscriviti con /caffeee");
+            anyhow::bail!(
+                "devi prima sottoscriverti ai messaggi automatici, prima di configurare un compleanno. Iscriviti con /caffeee"
+            );
         }
         repository
             .insert_birthday(*chat, name.clone(), date)
@@ -141,7 +142,7 @@ impl Automatizer {
             return Ok(());
         }
         let image = super::Buongiornissimo::get_greeting_image(Greeting::Compleanno).await?;
-        let bot = Bot::from_env().auto_send();
+        let bot = Bot::from_env();
         for (chat, name, _) in today_birthdays.into_iter() {
             if let Err(err) = AnswerBuilder::default()
                 .image(image.clone())
@@ -159,7 +160,7 @@ impl Automatizer {
     /// Send good morning greeting
     async fn send_good_morning() -> anyhow::Result<()> {
         Self::send_greeting(buongiornissimo_rs::greeting_of_the_day(
-            Local::today().naive_local(),
+            Local::now().naive_local().into(),
             *random_utils::choice(&[true, false]),
         ))
         .await
@@ -173,7 +174,7 @@ impl Automatizer {
         }
         let greeting = super::Buongiornissimo::get_greeting_image(media).await?;
         let answer = AnswerBuilder::default().image(greeting).finalize();
-        let bot = Bot::from_env().auto_send();
+        let bot = Bot::from_env();
         for chat in subscribed_chats.iter() {
             if let Err(err) = answer.clone().send(&bot, *chat).await {
                 error!("failed to send scheduled greeting to {}: {}", chat, err);
@@ -190,7 +191,7 @@ impl Automatizer {
     /// Retrieve today birthdays
     async fn today_birthdays() -> anyhow::Result<Vec<(ChatId, String, NaiveDate)>> {
         let repository = Repository::connect().await?;
-        let today = Local::today().naive_local();
+        let today = Local::now().naive_local();
         Ok(repository
             .get_birthdays()
             .await?
