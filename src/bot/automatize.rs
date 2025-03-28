@@ -89,8 +89,16 @@ impl Automatizer {
         let timezone = chrono::Local::now().timezone();
 
         let sched = JobScheduler::new().await?;
+
+        let ping_job = Job::new_async_tz("1/5 * * * * *", timezone, |_, _| {
+            Box::pin(async move {
+                debug!("running ping_job");
+            })
+        })?;
+        sched.add(ping_job).await?;
+
         // birthday job
-        let happy_birthday_job = Job::new_async("0 30 8 * * *", |_, _| {
+        let happy_birthday_job = Job::new_async_tz("0 30 8 * * *", timezone, |_, _| {
             Box::pin(async move {
                 info!("running happy_birthday_job");
                 if let Err(err) = Self::send_happy_birthday().await {
@@ -110,6 +118,17 @@ impl Automatizer {
             })
         })?;
         sched.add(good_morning_job).await?;
+
+        // buon weekend
+        let good_weekend_job = Job::new_async_tz("0 55 17 * * Sun,Sat", timezone, |_, _| {
+            Box::pin(async move {
+                info!("running good_weekend_job");
+                if let Err(err) = Self::send_greeting(Greeting::Weekend).await {
+                    error!("good_weekend_job failed: {}", err);
+                }
+            })
+        })?;
+        sched.add(good_weekend_job).await?;
 
         // buon pranzo
         let good_lunch_job = Job::new_async_tz("0 30 12 * * *", timezone, |_, _| {

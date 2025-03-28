@@ -38,7 +38,7 @@ pub struct Answer {
     script: Vec<Greeting>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 /// A media in the chat
 enum Greeting {
     Text(String),
@@ -55,7 +55,9 @@ impl Answer {
 
     /// Send answer
     pub async fn send(self, bot: &Bot, chat_id: ChatId) -> ResponseResult<()> {
+        debug!("sending answer to chat {chat_id}",);
         for message in self.script.into_iter() {
+            debug!("sending message {message:?}");
             match message {
                 Greeting::Image(image) => Self::send_image(bot, chat_id, image).await?,
                 Greeting::Text(text) => Self::send_text(bot, chat_id, text).await?,
@@ -66,11 +68,13 @@ impl Answer {
 
     /// Write text to chat
     async fn send_text(bot: &Bot, chat_id: ChatId, message: String) -> ResponseResult<()> {
+        debug!("sending text {message:?} to chat {chat_id}");
         bot.send_message(chat_id, message).await.map(|_| ())
     }
 
     /// Send image to chat
     async fn send_image(bot: &Bot, chat_id: ChatId, image: InputFile) -> ResponseResult<()> {
+        debug!("sending image {image:?} to chat {chat_id}");
         bot.send_photo(chat_id, image).await.map(|_| ())
     }
 }
