@@ -1,9 +1,12 @@
-auguri - <nome> ottieni un'immagine di buon compleanno,
-buongiornissimo - ottieni un'immagine del buongiorno
-buonpomeriggio - ottieni un'immagine del buon pomeriggio
-buonanotte - ottieni un'immagine della buona notte
-caffeee - iscriviti ai messaggi automatici
-compleanno - <nome> <data-yyyy-mm-dd> imposta un compleanno
-puliziakontatti - disinscriviti dai messaggi automatici
-release - ottieni la release attuale
-help - visualizza l'aiuto
+auguri - Ottieni immagini per augurare un buon compleanno a qualcuno
+buongiornissimo - Ottieni un'immagine del buongiorno (caffe' incluso)
+buonpomeriggio - Ottieni un'immagine del buon pomeriggio
+buonanotte - Ottieni un'immagine della buonanotte
+buonaserata - Ottieni un'immagine della buona serata
+buonweekend - Ottieni un'immagine del buon weekend
+buonpranzo - Ottieni un'immagine del buon pranzo
+buonacena - Ottieni un'immagine della buona cena
+compleanno - Configura un compleanno (passa nome <name> e data <yyyy-mm-dd>)
+caffeee - Questo comando fara' si che il bot invii messaggi automatici
+puliziakontatti - Disiscriviti dai messaggi automatici
+help - Mostra questo messaggio
