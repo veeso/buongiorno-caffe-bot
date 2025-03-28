@@ -11,7 +11,7 @@ mod repository;
 
 use answer::{Answer, AnswerBuilder};
 use automatize::Automatizer;
-use buongiornissimo_rs::Greeting;
+use buongiornissimo_rs::{Greeting, ScrapeError, ScrapeResult};
 use chrono::{Local, NaiveDate};
 use commands::Command;
 pub use config::Config;
@@ -124,7 +124,7 @@ impl Buongiornissimo {
 
     /// Get greeting image for media type.
     /// At the first try it'll use a random provider; then if the media type is not supported, it tries all the different providers
-    pub async fn get_greeting_image(media: Greeting) -> anyhow::Result<Url> {
+    pub async fn get_greeting_image(media: Greeting) -> ScrapeResult<Url> {
         let mut providers = Providers::all().to_vec();
         // shuffle
         providers.shuffle(&mut rng());
@@ -134,6 +134,14 @@ impl Buongiornissimo {
         for provider in providers {
             match Self::do_get_greeting_image(provider, media).await {
                 Ok(url) => return Ok(url),
+                Err(ScrapeError::UnsupportedGreeting) => {
+                    debug!(
+                        "provider {:?} does not support greeting {:?}",
+                        provider, media
+                    );
+                    last_err = Some(ScrapeError::UnsupportedGreeting);
+                    continue;
+                }
                 Err(err) => {
                     error!("failed to get image from provider {:?}: {}", provider, err);
                     last_err = Some(err);
@@ -143,13 +151,13 @@ impl Buongiornissimo {
         }
 
         // return last error
-        Err(last_err.unwrap())
+        Err(last_err.expect("must be set"))
     }
 
-    async fn do_get_greeting_image(provider: Providers, greeting: Greeting) -> anyhow::Result<Url> {
+    async fn do_get_greeting_image(provider: Providers, greeting: Greeting) -> ScrapeResult<Url> {
         match provider.scrape(greeting).await {
             Ok(urls) => Ok(random_utils::choice(&urls).clone()),
-            Err(err) => anyhow::bail!("failed to scrape image: {}", err),
+            Err(err) => Err(err),
         }
     }
 

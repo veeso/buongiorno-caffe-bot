@@ -1,5 +1,6 @@
 use buongiornissimo_rs::{
-    Augurando, BuongiornissimoCaffe, BuongiornoImmagini, Greeting, Scrape, TiCondivido,
+    Augurando, BuongiornissimoCaffe, BuongiornoImmagini, Greeting, Scrape, ScrapeResult,
+    TiCondivido,
 };
 use url::Url;
 
@@ -22,7 +23,7 @@ impl Providers {
         ]
     }
 
-    pub async fn scrape(self, greeting: Greeting) -> anyhow::Result<Vec<Url>> {
+    pub async fn scrape(self, greeting: Greeting) -> ScrapeResult<Vec<Url>> {
         let urls = match self {
             Providers::BuongiornissimoCaffe => BuongiornissimoCaffe.scrape(greeting).await,
             Providers::Augurando => Augurando.scrape(greeting).await,
