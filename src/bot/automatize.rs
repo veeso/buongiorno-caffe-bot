@@ -68,12 +68,7 @@ impl Automatizer {
         date: NaiveDate,
     ) -> anyhow::Result<()> {
         let repository = Repository::connect().await?;
-        // check whether chat is subscribed to automatic message
-        if !repository.is_subscribed(chat).await? {
-            anyhow::bail!(
-                "devi prima sottoscriverti ai messaggi automatici, prima di configurare un compleanno. Iscriviti con /caffeee"
-            );
-        }
+
         repository
             .insert_birthday(*chat, name.clone(), date)
             .await?;
