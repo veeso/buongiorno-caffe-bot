@@ -7,6 +7,7 @@ use std::str::FromStr;
 use chrono::{DateTime, FixedOffset, NaiveDate, Utc};
 use sqlx::{Pool, Sqlite};
 use teloxide::types::ChatId;
+use tracing::debug;
 
 use super::{RepositoryError, RepositoryResult};
 
@@ -58,6 +59,25 @@ impl Birthday {
         .fetch_all(db)
         .await
         .map_err(RepositoryError::from)
+    }
+
+    /// Check whether a birthday with the given chat, name, and date exists
+    pub async fn exists(
+        db: &Pool<Sqlite>,
+        chat: i64,
+        name: &str,
+        date: &str,
+    ) -> RepositoryResult<bool> {
+        let row: (i64,) = sqlx::query_as(
+            "SELECT COUNT(*) FROM birthday WHERE chat = $1 AND name = $2 AND date = $3",
+        )
+        .bind(chat)
+        .bind(name)
+        .bind(date)
+        .fetch_one(db)
+        .await
+        .map_err(RepositoryError::from)?;
+        Ok(row.0 > 0)
     }
 
     /// Insert `Birthday` to database

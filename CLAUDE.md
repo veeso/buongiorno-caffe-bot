@@ -16,7 +16,7 @@ Tests use temporary SQLite databases and `#[tokio::test]` for async support.
 ## Environment Variables
 
 - `TELOXIDE_TOKEN` — Telegram bot API token
-- `DATABASE_URI` — SQLite connection string (e.g. `sqlite:///path/to/db.sqlite`)
+- `DATABASE_URL` — SQLite connection string (e.g. `sqlite:///path/to/db.sqlite`)
 
 ## Architecture
 

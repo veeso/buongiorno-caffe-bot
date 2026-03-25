@@ -1,6 +1,6 @@
-//! # Big Luca
+//! # Buongiornissimo
 //!
-//! This module implements the big luca bot
+//! This module implements the buongiorno-caffe bot
 
 mod answer;
 mod automatize;
@@ -9,46 +9,50 @@ mod config;
 mod providers;
 mod repository;
 
+use std::sync::OnceLock;
+
 use answer::{Answer, AnswerBuilder};
 use automatize::Automatizer;
 use buongiornissimo_rs::{Greeting, ScrapeError, ScrapeResult};
 use chrono::{Local, NaiveDate};
 use commands::Command;
 pub use config::Config;
-use once_cell::sync::OnceCell;
 use providers::Providers;
 use rand::rng;
 use rand::seq::SliceRandom;
 use teloxide::prelude::*;
 use teloxide::utils::command::BotCommands;
+use tracing::{debug, error, info};
 use url::Url;
 
+use crate::repository::SqliteDb;
 use crate::utils::random as random_utils;
 
-pub static AUTOMATIZER: OnceCell<Automatizer> = OnceCell::new();
+pub static AUTOMATIZER: OnceLock<Automatizer> = OnceLock::new();
 
-/// Big luca bot application
+/// Buongiornissimo bot application
 pub struct Buongiornissimo {
     bot: Bot,
 }
 
 impl Buongiornissimo {
-    /// Initialize big luca
+    /// Initialize the bot
     pub async fn init() -> anyhow::Result<Self> {
-        // parse configuration
-        Config::try_from_env()?;
-        let automatizer = Automatizer::start()
+        let config = Config::try_from_env()?;
+        let bot = Bot::from_env();
+        let db = SqliteDb::connect(&config.database_url)
+            .await
+            .map_err(|e| anyhow::anyhow!("failed to connect to the database: {}", e))?;
+        let automatizer = Automatizer::start(db, bot.clone())
             .await
             .map_err(|e| anyhow::anyhow!("failed to start automatizer: {}", e))?;
-        // read parameters
         if AUTOMATIZER.set(automatizer).is_err() {
             anyhow::bail!("failed to set automatizer");
         };
-        let bot = Bot::from_env();
         Ok(Self { bot })
     }
 
-    /// Run big luca bot
+    /// Run the bot
     pub async fn run(self) -> anyhow::Result<()> {
         info!("running bot without webhooks");
         Command::repl(self.bot, Self::answer).await;

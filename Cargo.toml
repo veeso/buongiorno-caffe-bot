@@ -21,16 +21,10 @@ anyhow = "1"
 buongiornissimo-rs = "0.3"
 chrono = "0.4"
 envy = "0.4"
-once_cell = "1"
 rand = "0.10"
 serde = { version = "1", features = ["derive"] }
 sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite"] }
-teloxide = { version = "0.17", features = [
-  "macros",
-  "rustls",
-  "webhooks",
-  "webhooks-axum",
-] }
+teloxide = { version = "0.17", features = ["macros", "rustls"] }
 thiserror = "2"
 tokio = { version = "1", features = ["full"] }
 tokio-cron-scheduler = "0.15"

@@ -5,6 +5,7 @@
 use chrono::{DateTime, FixedOffset, Utc};
 use sqlx::{Pool, Sqlite};
 use teloxide::types::ChatId;
+use tracing::debug;
 
 use super::{RepositoryError, RepositoryResult};
 
@@ -43,6 +44,16 @@ impl Chat {
         .fetch_all(db)
         .await
         .map_err(RepositoryError::from)
+    }
+
+    /// Check whether a chat with the given id exists
+    pub async fn exists(db: &Pool<Sqlite>, id: i64) -> RepositoryResult<bool> {
+        let row: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM chat WHERE id = $1")
+            .bind(id)
+            .fetch_one(db)
+            .await
+            .map_err(RepositoryError::from)?;
+        Ok(row.0 > 0)
     }
 
     /// Insert `Chat` to database

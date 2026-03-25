@@ -1,11 +1,11 @@
-//! # Big luca bot repository
+//! # Bot repository
 //!
 //! This module contains the interface to the bot repository
 
 use chrono::NaiveDate;
 use teloxide::types::ChatId;
+use tracing::debug;
 
-use super::Config;
 use crate::repository::SqliteDb;
 use crate::repository::birthday::Birthday;
 use crate::repository::chat::Chat;
@@ -15,15 +15,9 @@ pub struct Repository {
 }
 
 impl Repository {
-    /// Connect to the database
-    pub async fn connect() -> anyhow::Result<Self> {
-        let config = Config::try_from_env()
-            .map_err(|_| anyhow::anyhow!("DATABASE_URL is not SET; repository is not available"))?;
-        Ok(Self {
-            db: SqliteDb::connect(&config.database_url)
-                .await
-                .map_err(|e| anyhow::anyhow!("failed to connect to the database: {}", e))?,
-        })
+    /// Create a new repository with the given database connection
+    pub fn new(db: SqliteDb) -> Self {
+        Self { db }
     }
 
     /// Insert a chat to database
@@ -68,16 +62,14 @@ impl Repository {
 
     /// Check whether `chat_id` is subscribed
     pub async fn is_subscribed(&self, chat_id: &ChatId) -> anyhow::Result<bool> {
-        Ok(self
-            .get_subscribed_chats()
-            .await?
-            .iter()
-            .any(|x| x == chat_id))
+        Chat::exists(self.db.pool(), chat_id.0)
+            .await
+            .map_err(|e| anyhow::anyhow!("failed to check subscription: {}", e))
     }
 
     // -- birthdays
 
-    /// Insert a chat to database
+    /// Insert a birthday to database
     pub async fn insert_birthday(
         &self,
         chat: ChatId,
@@ -93,14 +85,14 @@ impl Repository {
             .map_err(|e| anyhow::anyhow!("failed to insert birthdate into the database: {}", e))
     }
 
-    /// Delete chat from database
+    /// Delete birthdays by chat from database
     pub async fn delete_birthday_by_chat(&self, chat: ChatId) -> anyhow::Result<()> {
         Birthday::delete_by_chat(self.db.pool(), chat)
             .await
             .map_err(|e| anyhow::anyhow!("failed to delete birthday from the database: {}", e))
     }
 
-    /// Get subscribed chats
+    /// Get all birthdays
     pub async fn get_birthdays(&self) -> anyhow::Result<Vec<(ChatId, String, NaiveDate)>> {
         Birthday::get_all(self.db.pool())
             .await
@@ -124,39 +116,39 @@ impl Repository {
             })
     }
 
-    /// Check whether `chat_id` is subscribed
+    /// Check whether a birthday exists
     async fn birthday_exists(
         &self,
         chat_id: &ChatId,
         name: &str,
         date: NaiveDate,
     ) -> anyhow::Result<bool> {
-        Ok(self
-            .get_birthdays()
-            .await?
-            .iter()
-            .any(|(a, b, c)| a == chat_id && b == name && *c == date))
+        Birthday::exists(self.db.pool(), chat_id.0, name, &date.to_string())
+            .await
+            .map_err(|e| anyhow::anyhow!("failed to check birthday existence: {}", e))
     }
 }
 
 #[cfg(test)]
 mod test {
 
-    use std::time::Duration;
-
     use pretty_assertions::assert_eq;
     use tempfile::NamedTempFile;
 
     use super::*;
+    use crate::repository::SqliteDb;
+
+    async fn setup_repository() -> (Repository, NamedTempFile) {
+        let database = NamedTempFile::new().unwrap();
+        let db = SqliteDb::connect(&database.path().to_string_lossy())
+            .await
+            .unwrap();
+        (Repository::new(db), database)
+    }
 
     #[tokio::test]
     async fn should_handle_chats() {
-        let database = NamedTempFile::new().unwrap();
-        unsafe {
-            std::env::set_var("DATABASE_URL", database.path());
-            std::env::set_var("TELOXIDE_TOKEN", "123");
-        }
-        let repository = Repository::connect().await.unwrap();
+        let (repository, _database) = setup_repository().await;
         assert!(repository.insert_chat(ChatId(1)).await.is_ok());
         assert!(repository.insert_chat(ChatId(2)).await.is_ok());
         // duped
@@ -169,13 +161,7 @@ mod test {
 
     #[tokio::test]
     async fn should_handle_birthdays() {
-        let database = NamedTempFile::new().unwrap();
-        unsafe {
-            std::env::set_var("DATABASE_URL", database.path());
-            std::env::set_var("TELOXIDE_TOKEN", "123");
-        }
-        std::thread::sleep(Duration::from_secs(1));
-        let repository = Repository::connect().await.unwrap();
+        let (repository, _database) = setup_repository().await;
         assert!(
             repository
                 .insert_birthday(

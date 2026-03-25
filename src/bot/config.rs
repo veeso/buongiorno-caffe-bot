@@ -2,7 +2,7 @@
 //!
 //! buongiorno-caffe-bot configuration
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
 /// Application config
 pub struct Config {
     pub database_url: String,

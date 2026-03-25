@@ -7,6 +7,7 @@ pub mod chat;
 
 use sqlx::sqlite::SqlitePool;
 use thiserror::Error;
+use tracing::{debug, info};
 
 pub type RepositoryResult<T> = Result<T, RepositoryError>;
 
@@ -26,6 +27,7 @@ impl From<sqlx::Error> for RepositoryError {
     }
 }
 
+#[derive(Clone)]
 pub struct SqliteDb {
     pool: SqlitePool,
 }
@@ -55,7 +57,7 @@ impl SqliteDb {
     }
 
     async fn init_birthday_table(&self) -> RepositoryResult<()> {
-        debug!("creating chat table");
+        debug!("creating birthday table");
         sqlx::query(
             r#"CREATE TABLE IF NOT EXISTS birthday (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -8,9 +8,11 @@ use teloxide::prelude::*;
 use teloxide::types::ChatId;
 use thiserror::Error;
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
+use tracing::{debug, error, info};
 
 use super::AnswerBuilder;
 use super::repository::Repository;
+use crate::repository::SqliteDb;
 use crate::utils::random as random_utils;
 
 type AutomatizerResult<T> = Result<T, AutomatizerError>;
@@ -30,21 +32,27 @@ impl From<JobSchedulerError> for AutomatizerError {
 
 /// Automatizer takes care of sending messages to subscribed users
 pub struct Automatizer {
+    db: SqliteDb,
+    bot: Bot,
+    /// Stored to keep the scheduler alive for the lifetime of the application.
+    #[expect(dead_code, reason = "held to keep the scheduler running")]
     scheduler: JobScheduler,
 }
 
 impl Automatizer {
-    /// Start automatizer
-    pub async fn start() -> AutomatizerResult<Self> {
+    /// Start automatizer with the given database and bot
+    pub async fn start(db: SqliteDb, bot: Bot) -> AutomatizerResult<Self> {
         debug!("starting automatizer");
         Ok(Self {
+            db,
+            bot,
             scheduler: Self::setup_cron_scheduler().await?,
         })
     }
 
     /// Subscribe a chat to the automatizer
     pub async fn subscribe(&self, chat: &ChatId) -> anyhow::Result<()> {
-        let repository = Repository::connect().await?;
+        let repository = self.repository();
         repository.insert_chat(*chat).await?;
         info!("subscribed {} to the automatizer", chat);
         Ok(())
@@ -52,7 +60,7 @@ impl Automatizer {
 
     /// Unsubscribe chat from automatizer. If the chat is not currently subscribed, return error
     pub async fn unsubscribe(&self, chat: &ChatId) -> anyhow::Result<()> {
-        let repository = Repository::connect().await?;
+        let repository = self.repository();
         repository.delete_birthday_by_chat(*chat).await?;
         info!("deleted birthdays associated to chat {}", chat);
         repository.delete_chat(*chat).await?;
@@ -67,8 +75,7 @@ impl Automatizer {
         name: String,
         date: NaiveDate,
     ) -> anyhow::Result<()> {
-        let repository = Repository::connect().await?;
-
+        let repository = self.repository();
         repository
             .insert_birthday(*chat, name.clone(), date)
             .await?;
@@ -79,121 +86,24 @@ impl Automatizer {
         Ok(())
     }
 
-    /// Setup cron scheduler
-    async fn setup_cron_scheduler() -> AutomatizerResult<JobScheduler> {
-        let timezone = chrono::Local::now().timezone();
-
-        let sched = JobScheduler::new().await?;
-
-        // birthday job
-        let happy_birthday_job = Job::new_async_tz("0 30 8 * * *", timezone, |_, _| {
-            Box::pin(async move {
-                info!("running happy_birthday_job");
-                if let Err(err) = Self::send_happy_birthday().await {
-                    error!("happy_birthday_job failed: {}", err);
-                }
-            })
-        })?;
-        sched.add(happy_birthday_job).await?;
-
-        // good morning
-        let good_morning_job = Job::new_async_tz("0 30 6 * * *", timezone, |_, _| {
-            Box::pin(async move {
-                info!("running good_morning_job");
-                if let Err(err) = Self::send_good_morning().await {
-                    error!("good_morning_job failed: {}", err);
-                }
-            })
-        })?;
-        sched.add(good_morning_job).await?;
-
-        // buon weekend
-        let good_weekend_job = Job::new_async_tz("0 15 20 * * Fri", timezone, |_, _| {
-            Box::pin(async move {
-                info!("running good_weekend_job");
-                if let Err(err) = Self::send_greeting(Greeting::Weekend).await {
-                    error!("good_weekend_job failed: {}", err);
-                }
-            })
-        })?;
-        sched.add(good_weekend_job).await?;
-
-        // buon pranzo
-        let good_lunch_job = Job::new_async_tz("0 30 12 * * *", timezone, |_, _| {
-            Box::pin(async move {
-                info!("running good_lunch_job");
-                if let Err(err) = Self::send_greeting(Greeting::BuonPranzo).await {
-                    error!("good_lunch_job failed: {}", err);
-                }
-            })
-        })?;
-        sched.add(good_lunch_job).await?;
-
-        // buon pomeriggio
-        let good_afternoon_job = Job::new_async_tz("0 0 14 * * *", timezone, |_, _| {
-            Box::pin(async move {
-                info!("running good_afternoon_job");
-                if let Err(err) = Self::send_greeting(Greeting::BuonPomeriggio).await {
-                    error!("good_afternoon_job failed: {}", err);
-                }
-            })
-        })?;
-        sched.add(good_afternoon_job).await?;
-
-        // buona serata
-        let good_evening_job = Job::new_async_tz("0 0 18 * * *", timezone, |_, _| {
-            Box::pin(async move {
-                info!("running good_evening_job");
-                if let Err(err) = Self::send_greeting(Greeting::BuonaSerata).await {
-                    error!("good_evening_job failed: {}", err);
-                }
-            })
-        })?;
-        sched.add(good_evening_job).await?;
-
-        // buona cena
-        let good_dinner_job = Job::new_async_tz("0 30 19 * * *", timezone, |_, _| {
-            Box::pin(async move {
-                info!("running good_dinner_job");
-                if let Err(err) = Self::send_greeting(Greeting::BuonaCena).await {
-                    error!("good_dinner_job failed: {}", err);
-                }
-            })
-        })?;
-        sched.add(good_dinner_job).await?;
-
-        // buona notte
-        let good_night_job = Job::new_async_tz("0 30 21 * * *", timezone, |_, _| {
-            Box::pin(async move {
-                info!("running good_night_job");
-                if let Err(err) = Self::send_greeting(Greeting::BuonaNotte).await {
-                    error!("good_night_job failed: {}", err);
-                }
-            })
-        })?;
-        sched.add(good_night_job).await?;
-
-        sched
-            .start()
-            .await
-            .map(|_| sched)
-            .map_err(AutomatizerError::from)
+    /// Get subscribed chats
+    pub async fn subscribed_chats(&self) -> anyhow::Result<Vec<ChatId>> {
+        self.repository().get_subscribed_chats().await
     }
 
-    /// Send happy birthday
-    async fn send_happy_birthday() -> anyhow::Result<()> {
-        let today_birthdays = Self::today_birthdays().await?;
+    /// Send happy birthday greetings for today's birthdays
+    pub async fn send_happy_birthday(&self) -> anyhow::Result<()> {
+        let today_birthdays = self.today_birthdays().await?;
         if today_birthdays.is_empty() {
             return Ok(());
         }
         let image = super::Buongiornissimo::get_greeting_image(Greeting::Compleanno).await?;
-        let bot = Bot::from_env();
         for (chat, name, _) in today_birthdays.into_iter() {
             if let Err(err) = AnswerBuilder::default()
                 .image(image.clone())
                 .text(format!("Buon compleanno {}!", name))
                 .finalize()
-                .send(&bot, chat)
+                .send(&self.bot, chat)
                 .await
             {
                 error!("failed to send happy birthday to {}: {}", chat, err);
@@ -203,56 +113,99 @@ impl Automatizer {
     }
 
     /// Send good morning greeting
-    async fn send_good_morning() -> anyhow::Result<()> {
-        Self::send_greeting(buongiornissimo_rs::greeting_of_the_day(
+    pub async fn send_good_morning(&self) -> anyhow::Result<()> {
+        self.send_greeting(buongiornissimo_rs::greeting_of_the_day(
             Local::now().naive_local().into(),
             *random_utils::choice(&[true, false]),
         ))
         .await
     }
 
-    /// Send generic greeting
-    async fn send_greeting(media: Greeting) -> anyhow::Result<()> {
-        let subscribed_chats = Self::subscribed_chats().await?;
+    /// Send generic greeting to all subscribed chats
+    pub async fn send_greeting(&self, media: Greeting) -> anyhow::Result<()> {
+        let subscribed_chats = self.subscribed_chats().await?;
         if subscribed_chats.is_empty() {
             return Ok(());
         }
         let greeting = super::Buongiornissimo::get_greeting_image(media).await?;
         let answer = AnswerBuilder::default().image(greeting).finalize();
-        let bot = Bot::from_env();
         for chat in subscribed_chats.iter() {
-            if let Err(err) = answer.clone().send(&bot, *chat).await {
+            if let Err(err) = answer.clone().send(&self.bot, *chat).await {
                 error!("failed to send scheduled greeting to {}: {}", chat, err);
             }
         }
         Ok(())
     }
 
-    pub async fn subscribed_chats() -> anyhow::Result<Vec<ChatId>> {
-        let repository = Repository::connect().await?;
-        repository.get_subscribed_chats().await
+    fn repository(&self) -> Repository {
+        Repository::new(self.db.clone())
     }
 
-    /// Retrieve today birthdays
-    async fn today_birthdays() -> anyhow::Result<Vec<(ChatId, String, NaiveDate)>> {
-        let repository = Repository::connect().await?;
+    /// Retrieve today's birthdays
+    async fn today_birthdays(&self) -> anyhow::Result<Vec<(ChatId, String, NaiveDate)>> {
         let today = Local::now().naive_local();
-        Ok(repository
+        Ok(self
+            .repository()
             .get_birthdays()
             .await?
             .into_iter()
             .filter(|(_, _, date)| date.month() == today.month() && date.day() == today.day())
             .collect())
     }
-}
 
-impl Drop for Automatizer {
-    fn drop(&mut self) {
-        tokio::runtime::Runtime::new().unwrap().block_on(async {
-            info!("Shutting scheduler down");
-            if let Err(err) = self.scheduler.shutdown().await {
-                error!("failed to stop scheduler: {}", err);
-            }
-        });
+    /// Setup cron scheduler
+    async fn setup_cron_scheduler() -> AutomatizerResult<JobScheduler> {
+        let timezone = chrono::Local::now().timezone();
+        let sched = JobScheduler::new().await?;
+
+        let jobs: &[(&str, &str)] = &[
+            ("0 30 8 * * *", "happy_birthday"),
+            ("0 30 6 * * *", "good_morning"),
+            ("0 15 20 * * Fri", "good_weekend"),
+            ("0 30 12 * * *", "good_lunch"),
+            ("0 0 14 * * *", "good_afternoon"),
+            ("0 0 18 * * *", "good_evening"),
+            ("0 30 19 * * *", "good_dinner"),
+            ("0 30 21 * * *", "good_night"),
+        ];
+
+        for &(cron_expr, job_name) in jobs {
+            let name = job_name.to_string();
+            let job = Job::new_async_tz(cron_expr, timezone, move |_, _| {
+                let name = name.clone();
+                Box::pin(async move {
+                    info!("running {name}_job");
+                    if let Err(err) = Self::run_scheduled_job(&name).await {
+                        error!("{name}_job failed: {}", err);
+                    }
+                })
+            })?;
+            sched.add(job).await?;
+        }
+
+        sched
+            .start()
+            .await
+            .map(|_| sched)
+            .map_err(AutomatizerError::from)
+    }
+
+    /// Run a scheduled job by name, dispatching to the AUTOMATIZER static
+    async fn run_scheduled_job(name: &str) -> anyhow::Result<()> {
+        let automatizer = super::AUTOMATIZER
+            .get()
+            .ok_or_else(|| anyhow::anyhow!("automatizer not initialized"))?;
+
+        match name {
+            "happy_birthday" => automatizer.send_happy_birthday().await,
+            "good_morning" => automatizer.send_good_morning().await,
+            "good_weekend" => automatizer.send_greeting(Greeting::Weekend).await,
+            "good_lunch" => automatizer.send_greeting(Greeting::BuonPranzo).await,
+            "good_afternoon" => automatizer.send_greeting(Greeting::BuonPomeriggio).await,
+            "good_evening" => automatizer.send_greeting(Greeting::BuonaSerata).await,
+            "good_dinner" => automatizer.send_greeting(Greeting::BuonaCena).await,
+            "good_night" => automatizer.send_greeting(Greeting::BuonaNotte).await,
+            _ => anyhow::bail!("unknown job: {name}"),
+        }
     }
 }

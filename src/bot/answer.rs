@@ -4,6 +4,7 @@
 
 use teloxide::prelude::*;
 use teloxide::types::InputFile;
+use tracing::debug;
 use url::Url;
 
 /// A helper to build composed answers
@@ -15,14 +16,14 @@ pub struct AnswerBuilder {
 impl AnswerBuilder {
     /// Add text to script
     pub fn text(mut self, text: impl ToString) -> Self {
-        self.answer.script.push(Greeting::Text(text.to_string()));
+        self.answer.script.push(MessagePart::Text(text.to_string()));
         self
     }
 
     pub fn image(mut self, url: Url) -> Self {
         self.answer
             .script
-            .push(Greeting::Image(InputFile::url(url)));
+            .push(MessagePart::Image(InputFile::url(url)));
         self
     }
 
@@ -35,12 +36,12 @@ impl AnswerBuilder {
 /// The answer to send to the chat
 #[derive(Default, Clone)]
 pub struct Answer {
-    script: Vec<Greeting>,
+    script: Vec<MessagePart>,
 }
 
 #[derive(Clone, Debug)]
 /// A media in the chat
-enum Greeting {
+enum MessagePart {
     Text(String),
     Image(InputFile),
 }
@@ -49,7 +50,7 @@ impl Answer {
     /// Build a simple one text answer
     pub fn simple_text(text: impl ToString) -> Self {
         Self {
-            script: vec![Greeting::Text(text.to_string())],
+            script: vec![MessagePart::Text(text.to_string())],
         }
     }
 
@@ -59,8 +60,8 @@ impl Answer {
         for message in self.script.into_iter() {
             debug!("sending message {message:?}");
             match message {
-                Greeting::Image(image) => Self::send_image(bot, chat_id, image).await?,
-                Greeting::Text(text) => Self::send_text(bot, chat_id, text).await?,
+                MessagePart::Image(image) => Self::send_image(bot, chat_id, image).await?,
+                MessagePart::Text(text) => Self::send_text(bot, chat_id, text).await?,
             }
         }
         Ok(())
