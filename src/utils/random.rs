@@ -2,7 +2,7 @@
 //!
 //! Random utils
 
-use rand::Rng;
+use rand::RngExt as _;
 
 /// Choose a random element from `choices`
 pub fn choice<T>(choices: &[T]) -> &T {
